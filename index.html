@@ -375,10 +375,8 @@ function refreshDerivedData() {
 }
 
 function toDbRow(item) {
-  // Ensure app_id is always a valid finite number (never null/NaN/undefined)
-  const appId = (item._id && Number.isFinite(item._id)) ? item._id : Date.now();
+  // Do NOT include app_id — Supabase auto-generates it as primary key
   return {
-    app_id: appId,
     code: item.code || '',
     name: item.name || '',
     cas: item.cas || '',
@@ -395,13 +393,11 @@ function toDbRow(item) {
 }
 
 function fromDbRow(row) {
-  // _sid = Supabase auto-generated id (always unique, never null) — used for UPDATE/DELETE
-  // _id  = app_id we set (used for local JS lookups)
-  const sid = row.id; // Supabase auto primary key
-  const appId = (row.app_id != null && Number.isFinite(Number(row.app_id))) ? Number(row.app_id) : null;
+  // app_id is Supabase's auto-generated primary key — use it as both _sid and _id
+  const sid = row.app_id; // Supabase primary key (auto-generated, always unique)
   return {
-    _sid: sid,
-    _id: appId != null ? appId : (sid ? sid * 10000 : Date.now() + (Math.random() * 999 | 0)),
+    _sid: sid,   // Used for UPDATE/DELETE with Supabase
+    _id: sid,    // Used for local JS lookups (same value)
     code: row.code || '',
     name: row.name || '',
     cas: row.cas || '',
@@ -444,13 +440,16 @@ async function upsertRemoteItem(item) {
   const row = toDbRow(item);
   let error;
   if (item._sid) {
-    // Existing row — UPDATE by Supabase auto-id (never null, always reliable)
-    ({ error } = await supabase.from(SUPABASE_TABLE).update(row).eq('id', item._sid));
+    // UPDATE existing row using Supabase primary key (app_id)
+    ({ error } = await supabase.from(SUPABASE_TABLE).update(row).eq('app_id', item._sid));
   } else {
-    // New row — INSERT
+    // INSERT new row — Supabase will auto-generate app_id
     let inserted;
-    ({ data: inserted, error } = await supabase.from(SUPABASE_TABLE).insert([row]).select('id').single());
-    if (!error && inserted) item._sid = inserted.id; // store for future updates
+    ({ data: inserted, error } = await supabase.from(SUPABASE_TABLE).insert([row]).select('app_id').single());
+    if (!error && inserted) {
+      item._sid = inserted.app_id;
+      item._id  = inserted.app_id; // sync local id too
+    }
   }
   if (error) {
     console.error(error);
@@ -462,13 +461,8 @@ async function upsertRemoteItem(item) {
 
 async function deleteRemoteItemById(item) {
   if (!supabase) return true;
-  let error;
-  if (item._sid) {
-    // Use Supabase auto-id for reliable delete
-    ({ error } = await supabase.from(SUPABASE_TABLE).delete().eq('id', item._sid));
-  } else if (item._id && Number.isFinite(item._id)) {
-    ({ error } = await supabase.from(SUPABASE_TABLE).delete().eq('app_id', item._id));
-  }
+  if (!item._sid) return true; // no Supabase row to delete
+  const { error } = await supabase.from(SUPABASE_TABLE).delete().eq('app_id', item._sid);
   if (error) {
     console.error(error);
     alert('ลบข้อมูลจากฐานข้อมูลไม่สำเร็จ: ' + error.message);
@@ -481,12 +475,16 @@ async function replaceAllRemoteData(items) {
   if (!supabase) return true;
   isSyncing = true;
   try {
-    // Delete all rows — use gt('id', 0) since Supabase auto-id is always > 0
-    const { error: delError } = await supabase.from(SUPABASE_TABLE).delete().gt('id', 0);
+    // Delete all rows — app_id is Supabase primary key, always > 0
+    const { error: delError } = await supabase.from(SUPABASE_TABLE).delete().gt('app_id', 0);
     if (delError) throw delError;
     if (items.length > 0) {
-      const { error: insertError } = await supabase.from(SUPABASE_TABLE).insert(items.map(toDbRow));
-      if (insertError) throw insertError;
+      // Insert in batches of 500 to avoid payload limits
+      for (let i = 0; i < items.length; i += 500) {
+        const batch = items.slice(i, i + 500).map(toDbRow);
+        const { error: insertError } = await supabase.from(SUPABASE_TABLE).insert(batch);
+        if (insertError) throw insertError;
+      }
     }
     return true;
   } catch (error) {
