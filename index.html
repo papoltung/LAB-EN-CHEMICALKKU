@@ -1015,16 +1015,20 @@ function exportCSV() {
   a.click();
 }
 
-// ปิด modal เฉพาะเมื่อ mousedown และ mouseup อยู่บน backdrop เท่านั้น (ไม่ปิดเมื่อลากเมาส์ออกมา)
+// ปิด modal เฉพาะเมื่อคลิกที่ backdrop โดยตรง (ไม่ปิดเมื่อลากเมาส์ออกมาจากภายในฟอร์ม)
 (function() {
   const modalEl = document.getElementById('modal');
-  let mousedownOnBackdrop = false;
-  modalEl.addEventListener('mousedown', e => {
-    mousedownOnBackdrop = (e.target === modalEl);
-  });
+  const innerBox = modalEl.querySelector('.modal');
+  let startedInsideBox = false;
+
+  // ติดตามว่า mousedown เริ่มจากในกล่องขาว (ฟอร์ม) หรือเปล่า
+  document.addEventListener('mousedown', e => {
+    startedInsideBox = innerBox ? innerBox.contains(e.target) : false;
+  }, true);
+
+  // ปิดก็ต่อเมื่อ: คลิกที่ backdrop AND mousedown ก็อยู่บน backdrop (ไม่ได้ลากออกมา)
   modalEl.addEventListener('mouseup', e => {
-    if (mousedownOnBackdrop && e.target === modalEl) closeModal();
-    mousedownOnBackdrop = false;
+    if (!startedInsideBox && e.target === modalEl) closeModal();
   });
 })();
 
