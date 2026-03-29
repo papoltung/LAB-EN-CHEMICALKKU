@@ -311,7 +311,7 @@ tbody td { padding: 7px 11px; vertical-align: middle; }
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const SUPABASE_URL = "https://cxoqxjgzpzlrlpxjlhpt.supabase.co";
-const SUPABASE_KEY = "sb_publishable_lWz8MJ0tVkL7H49Kn5veYQ__PTQZOPM";
+const SUPABASE_KEY = "sb_publishable_lWz8MJ0tVkL7H49Kn5veYQ__PTQZOPM;
 const SUPABASE_TABLE = "inventory";
 
 const hasSupabaseConfig = SUPABASE_URL && !SUPABASE_URL.includes("PASTE_YOUR") && SUPABASE_KEY && !SUPABASE_KEY.includes("PASTE_YOUR");
@@ -373,8 +373,12 @@ function refreshDerivedData() {
   rebuildLocDropdown();
   rebuildPills();
 }
+
 function toDbRow(item) {
+  // Ensure app_id is always a valid finite number (never null/NaN/undefined)
+  const appId = (item._id && Number.isFinite(item._id)) ? item._id : Date.now();
   return {
+    app_id: appId,
     code: item.code || '',
     name: item.name || '',
     cas: item.cas || '',
@@ -392,7 +396,7 @@ function toDbRow(item) {
 
 function fromDbRow(row) {
   return {
-    _id: Number(row.app_id),
+    _id: (row.app_id != null && Number.isFinite(Number(row.app_id))) ? Number(row.app_id) : Date.now() + (Math.random() * 999 | 0),
     code: row.code || '',
     name: row.name || '',
     cas: row.cas || '',
@@ -949,9 +953,11 @@ async function saveItem() {
   };
   if (editingId !== null) {
     const idx = data.findIndex(x => x._id === editingId);
-    item._id = editingId;
+    // If editingId is 0/NaN/invalid, assign a new valid ID
+    const validId = (editingId && Number.isFinite(editingId)) ? editingId : Date.now();
+    item._id = validId;
     if (!(await upsertRemoteItem(item))) return;
-    data[idx] = {...item, _id: editingId};
+    data[idx] = {...item, _id: validId};
   } else {
     item._id = Date.now();
     if (!(await upsertRemoteItem(item))) return;
@@ -964,7 +970,10 @@ async function saveItem() {
 
 async function deleteItem(id) {
   if (!confirm('ลบสารเคมีนี้ออกจากรายการ?')) return;
-  if (!(await deleteRemoteItemById(id))) return;
+  // Only call remote delete if id is a valid finite number
+  if (Number.isFinite(id) && id > 0) {
+    if (!(await deleteRemoteItemById(id))) return;
+  }
   data = data.filter(x => x._id !== id);
   refreshDerivedData();
   applyFilters();
@@ -1073,7 +1082,8 @@ function processImport(file) {
       );
       if (!choice) return;
 
-      data = imported.map((d,i) => ({...d, _id: i + 1}));
+      const baseTs = Date.now();
+      data = imported.map((d,i) => ({...d, _id: baseTs + i}));
       activeHazard = '';
       refreshDerivedData();
       applyFilters();
