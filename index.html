@@ -395,8 +395,13 @@ function toDbRow(item) {
 }
 
 function fromDbRow(row) {
+  // _sid = Supabase auto-generated id (always unique, never null) — used for UPDATE/DELETE
+  // _id  = app_id we set (used for local JS lookups)
+  const sid = row.id; // Supabase auto primary key
+  const appId = (row.app_id != null && Number.isFinite(Number(row.app_id))) ? Number(row.app_id) : null;
   return {
-    _id: (row.app_id != null && Number.isFinite(Number(row.app_id))) ? Number(row.app_id) : Date.now() + (Math.random() * 999 | 0),
+    _sid: sid,
+    _id: appId != null ? appId : (sid ? sid * 10000 : Date.now() + (Math.random() * 999 | 0)),
     code: row.code || '',
     name: row.name || '',
     cas: row.cas || '',
@@ -436,7 +441,17 @@ async function loadRemoteData() {
 
 async function upsertRemoteItem(item) {
   if (!supabase) return true;
-  const { error } = await supabase.from(SUPABASE_TABLE).upsert([toDbRow(item)], { onConflict: 'app_id' });
+  const row = toDbRow(item);
+  let error;
+  if (item._sid) {
+    // Existing row — UPDATE by Supabase auto-id (never null, always reliable)
+    ({ error } = await supabase.from(SUPABASE_TABLE).update(row).eq('id', item._sid));
+  } else {
+    // New row — INSERT
+    let inserted;
+    ({ data: inserted, error } = await supabase.from(SUPABASE_TABLE).insert([row]).select('id').single());
+    if (!error && inserted) item._sid = inserted.id; // store for future updates
+  }
   if (error) {
     console.error(error);
     alert('บันทึกข้อมูลไปยังฐานข้อมูลไม่สำเร็จ: ' + error.message);
@@ -445,9 +460,15 @@ async function upsertRemoteItem(item) {
   return true;
 }
 
-async function deleteRemoteItemById(id) {
+async function deleteRemoteItemById(item) {
   if (!supabase) return true;
-  const { error } = await supabase.from(SUPABASE_TABLE).delete().eq('app_id', id);
+  let error;
+  if (item._sid) {
+    // Use Supabase auto-id for reliable delete
+    ({ error } = await supabase.from(SUPABASE_TABLE).delete().eq('id', item._sid));
+  } else if (item._id && Number.isFinite(item._id)) {
+    ({ error } = await supabase.from(SUPABASE_TABLE).delete().eq('app_id', item._id));
+  }
   if (error) {
     console.error(error);
     alert('ลบข้อมูลจากฐานข้อมูลไม่สำเร็จ: ' + error.message);
@@ -460,7 +481,8 @@ async function replaceAllRemoteData(items) {
   if (!supabase) return true;
   isSyncing = true;
   try {
-    const { error: delError } = await supabase.from(SUPABASE_TABLE).delete().neq('app_id', -1);
+    // Delete all rows — use gt('id', 0) since Supabase auto-id is always > 0
+    const { error: delError } = await supabase.from(SUPABASE_TABLE).delete().gt('id', 0);
     if (delError) throw delError;
     if (items.length > 0) {
       const { error: insertError } = await supabase.from(SUPABASE_TABLE).insert(items.map(toDbRow));
@@ -953,13 +975,15 @@ async function saveItem() {
   };
   if (editingId !== null) {
     const idx = data.findIndex(x => x._id === editingId);
-    // If editingId is 0/NaN/invalid, assign a new valid ID
+    const existingItem = data[idx];
     const validId = (editingId && Number.isFinite(editingId)) ? editingId : Date.now();
     item._id = validId;
+    item._sid = existingItem ? existingItem._sid : undefined; // carry over Supabase row id
     if (!(await upsertRemoteItem(item))) return;
     data[idx] = {...item, _id: validId};
   } else {
     item._id = Date.now();
+    item._sid = undefined; // new item, no Supabase row id yet
     if (!(await upsertRemoteItem(item))) return;
     data.unshift(item);
   }
@@ -970,9 +994,9 @@ async function saveItem() {
 
 async function deleteItem(id) {
   if (!confirm('ลบสารเคมีนี้ออกจากรายการ?')) return;
-  // Only call remote delete if id is a valid finite number
-  if (Number.isFinite(id) && id > 0) {
-    if (!(await deleteRemoteItemById(id))) return;
+  const itemToDelete = data.find(x => x._id === id);
+  if (itemToDelete) {
+    if (!(await deleteRemoteItemById(itemToDelete))) return;
   }
   data = data.filter(x => x._id !== id);
   refreshDerivedData();
