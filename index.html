@@ -620,7 +620,14 @@ async function deleteHazardType(idx) {
     ? `"${h.key}" มีสารเคมีอยู่ ${count} รายการ\nแน่ใจที่จะลบ? สารเคมีเหล่านั้นจะไม่มีประเภท`
     : `ลบประเภท "${h.key}"?`;
   if (!confirm(msg)) return;
-  if (count > 0) data.forEach(d => { if (d.hazard === h.key) d.hazard = ''; });
+  // เคลียร์ hazard หลัก
+  data.forEach(d => { if (d.hazard === h.key) d.hazard = ''; });
+  // เคลียร์ออกจาก extra_hazards ด้วย ป้องกันกลับมาเองตอน refresh
+  data.forEach(d => {
+    if (!d.extra_hazards) return;
+    const parts = String(d.extra_hazards).split(',').map(v => v.trim()).filter(v => v && v !== h.key);
+    d.extra_hazards = parts.join(', ');
+  });
   if (activeHazard === h.key) activeHazard = '';
   hazardTypes.splice(idx, 1);
   refreshDerivedData();
