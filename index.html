@@ -625,6 +625,7 @@ async function deleteHazardType(idx) {
   hazardTypes.splice(idx, 1);
   refreshDerivedData();
   renderHazardList();
+  rebuildPills();
   applyFilters();
   await replaceAllRemoteData(data);
 }
