@@ -1048,6 +1048,31 @@ function renderCards() {
   </article>`).join('') : '<div class="no-results" style="grid-column:1/-1">ไม่พบสารเคมีที่ค้นหา 🔍</div>';
 }
 
+// Final card renderer: keep one predictable side-layout structure.
+function renderCards() {
+  const host = document.getElementById('cardView');
+  if (!host) return;
+  host.innerHTML = filtered.length ? filtered.map(d => `<article class="chemical-card">
+    ${chemicalVisual(d)}
+    <div class="chemical-card-body">
+      <div class="chemical-card-stats">
+        <div class="chemical-stat"><div class="chemical-stat-label">คงเหลือ</div><div class="chemical-stat-value">${escapeHtml(d.remaining || '—')}</div></div>
+        <div class="chemical-stat"><div class="chemical-stat-label">ที่จัดเก็บ</div><div class="chemical-stat-value">${escapeHtml(d.location || '—')}</div></div>
+        <div class="chemical-stat"><div class="chemical-stat-label">ขนาดขวด</div><div class="chemical-stat-value">${escapeHtml(d.size || '—')}</div></div>
+        <div class="chemical-stat"><div class="chemical-stat-label">หมดอายุ</div><div class="chemical-stat-value">${escapeHtml(d.expiry || '—')}</div></div>
+      </div>
+      <div class="chemical-card-footer">
+        <span class="chemical-card-meta">${d.updated_at ? 'อัปเดต ' + escapeHtml(fmtDateTime(d.updated_at)) : 'ยังไม่มีการอัปเดต'}</span>
+        <div class="chemical-card-actions">
+          <button class="btn-sm btn-withdraw" onclick="openWithdrawModal(${d._id})">เบิก</button>
+          <button class="btn-sm btn-edit" onclick="openEditModal(${d._id})" aria-label="แก้ไข">✏️</button>
+          <button class="btn-sm btn-del" onclick="deleteItem(${d._id})" aria-label="ลบ">🗑</button>
+        </div>
+      </div>
+    </div>
+  </article>`).join('') : '<div class="no-results" style="grid-column:1/-1">ไม่พบสารเคมีที่ค้นหา</div>';
+}
+
 function setViewMode(mode) {
   viewMode = mode;
   document.getElementById('cardView').style.display = mode === 'cards' ? 'grid' : 'none';
