@@ -371,16 +371,20 @@ let hazardTypes = [
   {key: 'Oxidizing',    icon: '🔶',  color: '#fbd38d', textColor: '#7b341e'},
   {key: 'Environmental',icon: '🌿',  color: '#c6f6d5', textColor: '#22543d'},
   {key: 'Explosive',    icon: '💥',  color: '#fed7d7', textColor: '#822727'},
+  {key: 'Gas',          icon: '◌',   color: '#e0e7ff', textColor: '#3730a3'},
   {key: 'No Danger',    icon: '✅',  color: '#e2e8f0', textColor: '#4a5568'},
 ];
 
 const GHS_PICTOGRAMS = {
-  Corrosion: {src: 'public/icons/ghs/corrosive.svg', alt: 'สัญลักษณ์สารกัดกร่อน'},
-  Flame: {src: 'public/icons/ghs/flammable.svg', alt: 'สัญลักษณ์สารไวไฟ'},
-  Toxic: {src: 'public/icons/ghs/toxic.svg', alt: 'สัญลักษณ์พิษเฉียบพลัน'},
-  Oxidizing: {src: 'public/icons/ghs/oxidizer.svg', alt: 'สัญลักษณ์สารออกซิไดซ์'},
-  Environmental: {src: 'public/icons/ghs/environmental.svg', alt: 'สัญลักษณ์อันตรายต่อสิ่งแวดล้อม'},
-  Explosive: {src: 'public/icons/ghs/explosive.svg', alt: 'สัญลักษณ์สารระเบิด'},
+  Explosive: {src: 'public/icons/ghs/explosive.png', alt: 'สัญลักษณ์สารระเบิด'},
+  Flame: {src: 'public/icons/ghs/flammable.png', alt: 'สัญลักษณ์สารไวไฟ'},
+  Oxidizing: {src: 'public/icons/ghs/oxidizer.png', alt: 'สัญลักษณ์สารออกซิไดซ์'},
+  Gas: {src: 'public/icons/ghs/gas.png', alt: 'สัญลักษณ์ก๊าซภายใต้ความดัน'},
+  Corrosion: {src: 'public/icons/ghs/corrosive.png', alt: 'สัญลักษณ์สารกัดกร่อน'},
+  Toxic: {src: 'public/icons/ghs/toxic.png', alt: 'สัญลักษณ์พิษเฉียบพลัน'},
+  Irritant: {src: 'public/icons/ghs/irritant.png', alt: 'สัญลักษณ์สารระคายเคือง'},
+  Health: {src: 'public/icons/ghs/health.png', alt: 'สัญลักษณ์อันตรายต่อสุขภาพ'},
+  Environmental: {src: 'public/icons/ghs/environmental.png', alt: 'สัญลักษณ์อันตรายต่อสิ่งแวดล้อม'},
 };
 
 function hazardIconHtml(hazard, className = 'ghs-icon', informative = false) {
@@ -1181,9 +1185,10 @@ const HAZARD_MAP = {
   'oxidizing':'Oxidizing','ของเหลวออกซิไดซ์':'Oxidizing',
   'environmental':'Environmental','enviroment':'Environmental','enviroement':'Environmental',
   'explosive':'Explosive','สารระเบิด':'Explosive',
+  'gas':'Gas','ก๊าซ':'Gas','ก๊าซภายใต้ความดัน':'Gas',
   'n/a':'No Danger',
 };
-const HAZARD_SHEETS = ['irritant','corrosion','no danger','flame','toxic','health','oxidizing','environment','explosive'];
+const HAZARD_SHEETS = ['irritant','corrosion','no danger','flame','toxic','health','oxidizing','environment','explosive','gas'];
 
 function normalizeHazard(val, isNoDanger) {
   if (!val || String(val).startsWith('=')) return isNoDanger ? 'No Danger' : '';
