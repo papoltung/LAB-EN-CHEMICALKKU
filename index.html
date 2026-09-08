@@ -532,6 +532,7 @@ const SUPABASE_URL = "https://cxoqxjgzpzlrlpxjlhpt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_lWz8MJ0tVkL7H49Kn5veYQ__PTQZOPM";
 const SUPABASE_TABLE = "inventory";
 const SUPABASE_IMAGE_BUCKET = "chemical-images";
+const APP_PRODUCTION_URL = "https://lab-en-chemicalkku.vercel.app";
 
 const hasSupabaseConfig = SUPABASE_URL && !SUPABASE_URL.includes("PASTE_YOUR") && SUPABASE_KEY && !SUPABASE_KEY.includes("PASTE_YOUR");
 const supabase = hasSupabaseConfig ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
@@ -555,7 +556,7 @@ async function loginWithGoogle() {
   }
   const {error} = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin + window.location.pathname }
+    options: { redirectTo: APP_PRODUCTION_URL }
   });
   if (error) showAuthGate('เข้าสู่ระบบไม่สำเร็จ: ' + error.message);
 }
