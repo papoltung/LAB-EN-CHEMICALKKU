@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="title">
+  <title id="title">อันตรายต่อสิ่งแวดล้อม</title>
+  <path fill="#fff" stroke="#ef3e36" stroke-width="7" d="M50 5 95 50 50 95 5 50Z"/>
+  <g fill="#111">
+    <path d="M17 72h67v4H17zM38 69h7V34l-8-15 4 18-11-12 8 20-14-8 14 14z"/>
+    <path d="M45 67c13-13 23-17 38-19-4 14-15 23-31 23l-8 4 4-7zM73 50l8 5-10 1z"/>
+  </g>
+</svg>

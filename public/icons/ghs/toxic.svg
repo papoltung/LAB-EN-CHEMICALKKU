@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="title">
+  <title id="title">พิษเฉียบพลัน</title>
+  <path fill="#fff" stroke="#ef3e36" stroke-width="7" d="M50 5 95 50 50 95 5 50Z"/>
+  <g fill="#111">
+    <path d="m24 68 5-5 47-28 3 5-47 29zm0-28 4-5 49 29-4 6z"/>
+    <path d="M50 24c-14 0-23 9-23 21 0 8 4 12 9 16v8h9v-7h10v7h9v-8c5-4 9-8 9-16 0-12-9-21-23-21Zm-10 25c-4 0-7-3-7-7s3-7 7-7 7 3 7 7-3 7-7 7Zm20 0c-4 0-7-3-7-7s3-7 7-7 7 3 7 7-3 7-7 7Zm-10 8-5-2 5-8 5 8z"/>
+  </g>
+</svg>

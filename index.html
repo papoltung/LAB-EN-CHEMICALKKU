@@ -121,6 +121,7 @@ tbody td { padding: 7px 11px; vertical-align: middle; }
 .picker-chip {
   padding: 4px 10px; border-radius: 14px; font-size: 12px; font-weight: 600;
   cursor: pointer; border: 2px solid transparent; transition: all 0.15s; user-select: none;
+  display:inline-flex; align-items:center; gap:.35rem; font-family:inherit;
 }
 .picker-chip.selected { border-color: #1a365d; box-shadow: 0 0 0 2px #bee3f8; }
 
@@ -158,6 +159,10 @@ tbody td { padding: 7px 11px; vertical-align: middle; }
 .chemical-card-visual { height:142px; display:flex; align-items:center; justify-content:center; position:relative; background:linear-gradient(135deg,#ebf8ff,#f7fafc); overflow:hidden; }
 .chemical-card-visual img { width:100%; height:100%; object-fit:cover; }
 .chemical-card-emoji { font-size:62px; filter:drop-shadow(0 5px 5px #2d374830); }
+.ghs-icon { width:1.65rem; height:1.65rem; object-fit:contain; flex:0 0 auto; }
+.ghs-icon-sm { width:1.25rem; height:1.25rem; }
+.ghs-icon-card { width:6.5rem !important; height:6.5rem !important; object-fit:contain !important; filter:drop-shadow(0 5px 5px #2d374830); display:inline-flex; align-items:center; justify-content:center; font-size:3rem; }
+.hazard-label { display:inline-flex; align-items:center; gap:.35rem; }
 .chemical-card-hazard { position:absolute; top:10px; left:10px; padding:5px 9px; border-radius:999px; font-size:11px; font-weight:800; }
 .chemical-card-body { padding:14px; }
 .chemical-card-title { font-weight:800; color:#1a202c; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -365,8 +370,28 @@ let hazardTypes = [
   {key: 'Health',       icon: '💊',  color: '#bee3f8', textColor: '#2a4365'},
   {key: 'Oxidizing',    icon: '🔶',  color: '#fbd38d', textColor: '#7b341e'},
   {key: 'Environmental',icon: '🌿',  color: '#c6f6d5', textColor: '#22543d'},
+  {key: 'Explosive',    icon: '💥',  color: '#fed7d7', textColor: '#822727'},
   {key: 'No Danger',    icon: '✅',  color: '#e2e8f0', textColor: '#4a5568'},
 ];
+
+const GHS_PICTOGRAMS = {
+  Corrosion: {src: 'public/icons/ghs/corrosive.svg', alt: 'สัญลักษณ์สารกัดกร่อน'},
+  Flame: {src: 'public/icons/ghs/flammable.svg', alt: 'สัญลักษณ์สารไวไฟ'},
+  Toxic: {src: 'public/icons/ghs/toxic.svg', alt: 'สัญลักษณ์พิษเฉียบพลัน'},
+  Oxidizing: {src: 'public/icons/ghs/oxidizer.svg', alt: 'สัญลักษณ์สารออกซิไดซ์'},
+  Environmental: {src: 'public/icons/ghs/environmental.svg', alt: 'สัญลักษณ์อันตรายต่อสิ่งแวดล้อม'},
+  Explosive: {src: 'public/icons/ghs/explosive.svg', alt: 'สัญลักษณ์สารระเบิด'},
+};
+
+function hazardIconHtml(hazard, className = 'ghs-icon', informative = false) {
+  const pictogram = GHS_PICTOGRAMS[hazard];
+  if (!pictogram) {
+    const fallback = hazardTypes.find(type => type.key === hazard)?.icon || '◇';
+    return `<span class="${className}" ${informative ? `role="img" aria-label="${escapeHtml(hazard || 'ไม่ระบุประเภทอันตราย')}"` : 'aria-hidden="true"'}>${escapeHtml(fallback)}</span>`;
+  }
+  const alt = informative ? pictogram.alt : '';
+  return `<img class="${className}" src="${pictogram.src}" alt="${escapeHtml(alt)}" loading="lazy" onerror="this.replaceWith(document.createTextNode('◇'))">`;
+}
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -586,7 +611,8 @@ function rebuildPills() {
     div.className = 'pill' + (activeHazard === h.key ? ' active' : '');
     div.style.background = h.color;
     div.style.color = h.textColor;
-    div.textContent = `${h.icon} ${h.key} (${count})`;
+    div.classList.add('hazard-label');
+    div.innerHTML = `${hazardIconHtml(h.key, 'ghs-icon ghs-icon-sm')}<span>${escapeHtml(h.key)} (${count})</span>`;
     div.onclick = () => { activeHazard = h.key; rebuildPills(); applyFilters(); };
     pillBar.insertBefore(div, manageBtn);
   });
@@ -611,7 +637,7 @@ function renderHazardList() {
   list.innerHTML = hazardTypes.map((h,i) => {
     const count = data.filter(d => d.hazard === h.key).length;
     return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f7fafc;border-radius:8px;border:1px solid #e2e8f0">
-      <span style="font-size:20px">${h.icon}</span>
+      ${hazardIconHtml(h.key, 'ghs-icon', true)}
       <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${h.color};border:1px solid #cbd5e0"></span>
       <span style="font-weight:600;flex:1">${h.key}</span>
       <span style="font-size:11px;color:#a0aec0">${count} รายการ</span>
@@ -682,7 +708,7 @@ function rebuildHazardDropdown() {
   // f_hazard is now a text input with datalist
   const dl = document.getElementById('hazardDatalist');
   if (dl) {
-    dl.innerHTML = hazardTypes.map(h => `<option value="${h.key}">${h.icon} ${h.key}</option>`).join('');
+    dl.innerHTML = hazardTypes.map(h => `<option value="${escapeHtml(h.key)}">${escapeHtml(h.key)}</option>`).join('');
   }
 }
 
@@ -703,11 +729,13 @@ function buildExtraPicker(selectedArr) {
   picker.innerHTML = '';
   hazardTypes.forEach(h => {
     if (h.key === mainHazard) return; // ไม่แสดงตัวที่เป็นประเภทหลักอยู่แล้ว
-    const chip = document.createElement('span');
+    const chip = document.createElement('button');
+    chip.type = 'button';
     chip.className = 'picker-chip' + (selectedArr.includes(h.key) ? ' selected' : '');
     chip.style.background = h.color;
     chip.style.color = h.textColor;
-    chip.textContent = `${h.icon} ${h.key}`;
+    chip.dataset.hazard = h.key;
+    chip.innerHTML = `${hazardIconHtml(h.key, 'ghs-icon ghs-icon-sm')}<span>${escapeHtml(h.key)}</span>`;
     chip.onclick = () => {
       chip.classList.toggle('selected');
       syncExtraHazards();
@@ -719,7 +747,7 @@ function buildExtraPicker(selectedArr) {
 
 function syncExtraHazards() {
   const selected = [...document.querySelectorAll('#extraHazardPicker .picker-chip.selected')]
-    .map(c => c.textContent.trim().replace(/^\S+\s/, ''));
+    .map(c => c.dataset.hazard);
   document.getElementById('f_extra_hazards').value = selected.join(',');
 }
 
@@ -885,11 +913,11 @@ async function uploadChemicalImage(file, itemCode) {
 function chemicalVisual(d) {
   const ht = hazardTypes.find(x => x.key === d.hazard);
   const bg = ht?.color || '#ebf8ff';
-  const icon = ht?.icon || '🧪';
   return `<div class="chemical-card-visual" style="background:linear-gradient(135deg,${bg},#fff)">
-    <span class="chemical-card-emoji" aria-hidden="true">${escapeHtml(icon)}</span>
-    ${d.image_url ? `<img src="${escapeHtml(d.image_url)}" alt="ภาพ ${escapeHtml(d.name)}" loading="lazy" onerror="this.remove()">` : ''}
-    <span class="chemical-card-hazard" style="${getBadgeStyle(d.hazard)}">${escapeHtml(d.hazard || 'ไม่ระบุ')}</span>
+    ${d.image_url
+      ? `<img src="${escapeHtml(d.image_url)}" alt="ภาพ ${escapeHtml(d.name)}" loading="lazy" onerror="this.replaceWith(document.createTextNode('◇'))">`
+      : hazardIconHtml(d.hazard, 'ghs-icon-card', true)}
+    <span class="chemical-card-hazard hazard-label" style="${getBadgeStyle(d.hazard)}">${hazardIconHtml(d.hazard, 'ghs-icon ghs-icon-sm')}<span>${escapeHtml(d.hazard || 'ไม่ระบุ')}</span></span>
   </div>`;
 }
 
@@ -941,13 +969,12 @@ function renderTable() {
         <td style="font-weight:500">${escapeHtml(d.name)}</td>
         <td style="font-size:11px;color:#718096">${escapeHtml(d.cas)}</td>
         <td>
-          <span class="badge" style="${getBadgeStyle(d.hazard)}">${escapeHtml(getBadgeIcon(d.hazard) + (d.hazard||'-'))}</span>
+          <span class="badge hazard-label" style="${getBadgeStyle(d.hazard)}">${hazardIconHtml(d.hazard, 'ghs-icon ghs-icon-sm')}<span>${escapeHtml(d.hazard||'-')}</span></span>
           ${(d.extra_hazards||'').split(',').filter(Boolean).map(e => {
             const ht = hazardTypes.find(x => x.key === e);
             const bg = ht ? ht.color : '#f0f0f0';
             const tc = ht ? ht.textColor : '#999';
-            const ic = ht ? ht.icon+' ' : '';
-            return `<span class="extra-tag" style="background:${bg};color:${tc}">${escapeHtml(ic + e)}</span>`;
+            return `<span class="extra-tag hazard-label" style="background:${bg};color:${tc}">${hazardIconHtml(e, 'ghs-icon ghs-icon-sm')}<span>${escapeHtml(e)}</span></span>`;
           }).join(' ')}
         </td>
         <td>${escapeHtml(d.size)}</td>
@@ -1153,9 +1180,10 @@ const HAZARD_MAP = {
   'health':'Health',
   'oxidizing':'Oxidizing','ของเหลวออกซิไดซ์':'Oxidizing',
   'environmental':'Environmental','enviroment':'Environmental','enviroement':'Environmental',
+  'explosive':'Explosive','สารระเบิด':'Explosive',
   'n/a':'No Danger',
 };
-const HAZARD_SHEETS = ['irritant','corrosion','no danger','flame','toxic','health','oxidizing','environment'];
+const HAZARD_SHEETS = ['irritant','corrosion','no danger','flame','toxic','health','oxidizing','environment','explosive'];
 
 function normalizeHazard(val, isNoDanger) {
   if (!val || String(val).startsWith('=')) return isNoDanger ? 'No Danger' : '';

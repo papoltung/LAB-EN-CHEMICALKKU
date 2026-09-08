@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="title">
+  <title id="title">สารกัดกร่อน</title>
+  <path fill="#fff" stroke="#ef3e36" stroke-width="7" d="M50 5 95 50 50 95 5 50Z"/>
+  <g fill="#111">
+    <path d="M17 70h29v6H17zm37 7c4-10 10-15 19-16 6-1 9 1 13 4l-3 5-10-2-7 9zM20 32l27 8-2 7-27-8zm38 1 25 10-3 7-25-10z"/>
+    <path d="M39 52c0 4-3 7-6 7s-5-3-4-6l6-8zm35 4c0 4-3 7-6 7s-5-3-4-6l6-8z"/>
+  </g>
+</svg>
