@@ -149,6 +149,26 @@ tbody td { padding: 7px 11px; vertical-align: middle; }
 .modal-updated { font-size: 11px; color: #a0aec0; margin-top: 6px; text-align: right; }
 
 .no-results { text-align: center; padding: 60px; color: #a0aec0; font-size: 15px; }
+.view-toggle { display:flex; gap:4px; padding:4px; background:#edf2f7; border-radius:10px; }
+.view-toggle button { border:0; background:transparent; color:#718096; padding:7px 11px; border-radius:7px; cursor:pointer; font-weight:700; font-size:12px; }
+.view-toggle button.active { background:white; color:#2b6cb0; box-shadow:0 1px 3px #cbd5e080; }
+.chemical-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; padding:4px; }
+.chemical-card { background:#fff; border:1px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px #2d374810; transition:transform .18s, box-shadow .18s; }
+.chemical-card:hover { transform:translateY(-2px); box-shadow:0 8px 22px #2d37481c; }
+.chemical-card-visual { height:142px; display:flex; align-items:center; justify-content:center; position:relative; background:linear-gradient(135deg,#ebf8ff,#f7fafc); overflow:hidden; }
+.chemical-card-visual img { width:100%; height:100%; object-fit:cover; }
+.chemical-card-emoji { font-size:62px; filter:drop-shadow(0 5px 5px #2d374830); }
+.chemical-card-hazard { position:absolute; top:10px; left:10px; padding:5px 9px; border-radius:999px; font-size:11px; font-weight:800; }
+.chemical-card-body { padding:14px; }
+.chemical-card-title { font-weight:800; color:#1a202c; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chemical-card-meta { color:#718096; font-size:11px; margin-top:3px; }
+.chemical-card-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:13px; }
+.chemical-stat { background:#f7fafc; border-radius:9px; padding:8px; }
+.chemical-stat-label { color:#a0aec0; font-size:10px; }
+.chemical-stat-value { color:#2d3748; font-size:13px; font-weight:700; margin-top:2px; }
+.chemical-card-footer { display:flex; justify-content:space-between; align-items:center; margin-top:13px; padding-top:11px; border-top:1px solid #edf2f7; }
+.chemical-card-actions { display:flex; gap:5px; }
+@media (max-width:650px) { .chemical-grid { grid-template-columns:1fr; } .chemical-card-visual { height:125px; } }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #f0f4f8; }
 ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
@@ -181,11 +201,17 @@ tbody td { padding: 7px 11px; vertical-align: middle; }
   </div>
   <button class="btn btn-primary" onclick="openAddModal()">＋ เพิ่มสาร</button>
   <button class="btn btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+  <div class="view-toggle" aria-label="รูปแบบการแสดงผล">
+    <button id="tableViewBtn" onclick="setViewMode('table')">☷ ตาราง</button>
+    <button id="cardViewBtn" class="active" onclick="setViewMode('cards')">▦ รูปภาพ</button>
+  </div>
   <label class="btn" style="background:#2f855a;color:white;cursor:pointer" title="นำเข้าไฟล์ Excel ใหม่">
     📥 Import Excel
     <input type="file" id="importFileInput" accept=".xlsx,.xls" style="display:none" onchange="handleImportFile(this)">
   </label>
 </div>
+
+<div id="cardView" class="chemical-grid" aria-live="polite"></div>
 
 <!-- Drop overlay -->
 <div id="dropOverlay" style="display:none;position:fixed;inset:0;background:rgba(43,108,176,0.85);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:16px">
@@ -292,6 +318,7 @@ tbody td { padding: 7px 11px; vertical-align: middle; }
       <div class="form-group"><label>วันที่รับเข้ามา</label><input type="text" id="f_received" placeholder="DD/MM/YYYY"></div>
       <div class="form-group"><label>วันที่เปิดใช้ขวด</label><input type="text" id="f_opened" placeholder="DD/MM/YYYY"></div>
       <div class="form-group"><label>วันหมดอายุ</label><input type="text" id="f_expiry" placeholder="DD/MM/YYYY"></div>
+      <div class="form-group full"><label>ลิงก์รูปสาร (ถ้ามี)</label><input type="url" id="f_image_url" placeholder="https://.../chemical.jpg"><small style="display:block;color:#a0aec0;margin-top:4px">ถ้าไม่ใส่ ระบบจะแสดงภาพไอคอนตามประเภทอันตรายอัตโนมัติ</small></div>
       <div class="form-group full">
         <label>ความอันตรายเพิ่มเติม <span style="font-weight:400;color:#a0aec0">(ไม่กระทบการจัดกลุ่ม — คลิกเลือกได้หลายอัน)</span></label>
         <div id="extraHazardPicker" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1.5px solid #cbd5e0;border-radius:8px;min-height:40px;cursor:pointer;background:white"></div>
@@ -326,6 +353,7 @@ let sortKey = 'updated_at';
 let sortAsc = false;
 let editingId = null;
 let activeHazard = '';
+let viewMode = 'cards';
 
 // Hazard types — dynamic
 let hazardTypes = [
@@ -387,6 +415,7 @@ function toDbRow(item) {
     received: item.received || '',
     opened: item.opened || '',
     expiry: item.expiry || '',
+    image_url: item.image_url || '',
     updated_at: item.updated_at || null,
   };
 }
@@ -408,6 +437,7 @@ function fromDbRow(row) {
     received: row.received || '',
     opened: row.opened || '',
     expiry: row.expiry || '',
+    image_url: row.image_url || '',
     updated_at: row.updated_at || null,
   };
 }
@@ -451,6 +481,17 @@ async function upsertRemoteItem(item) {
     }
   }
   if (error) {
+    // Older Supabase tables may not have image_url yet; keep normal inventory saves working.
+    if (Object.prototype.hasOwnProperty.call(row, 'image_url')) {
+      const fallback = {...row}; delete fallback.image_url;
+      const retry = item._sid
+        ? await supabase.from(SUPABASE_TABLE).update(fallback).eq('app_id', item._sid)
+        : await supabase.from(SUPABASE_TABLE).insert([fallback]).select('app_id').single();
+      if (!retry.error) {
+        if (!item._sid && retry.data) { item._sid = retry.data.app_id; item._id = retry.data.app_id; }
+        return true;
+      }
+    }
     console.error(error);
     alert('บันทึกข้อมูลไปยังฐานข้อมูลไม่สำเร็จ: ' + error.message);
     return false;
@@ -828,6 +869,44 @@ function getBadgeIcon(h) {
   return ht ? ht.icon + ' ' : '';
 }
 
+function chemicalVisual(d) {
+  const ht = hazardTypes.find(x => x.key === d.hazard);
+  const bg = ht?.color || '#ebf8ff';
+  const icon = ht?.icon || '🧪';
+  return `<div class="chemical-card-visual" style="background:linear-gradient(135deg,${bg},#fff)">
+    <span class="chemical-card-emoji" aria-hidden="true">${escapeHtml(icon)}</span>
+    ${d.image_url ? `<img src="${escapeHtml(d.image_url)}" alt="ภาพ ${escapeHtml(d.name)}" loading="lazy" onerror="this.remove()">` : ''}
+    <span class="chemical-card-hazard" style="${getBadgeStyle(d.hazard)}">${escapeHtml(d.hazard || 'ไม่ระบุ')}</span>
+  </div>`;
+}
+
+function renderCards() {
+  const host = document.getElementById('cardView');
+  if (!host) return;
+  host.innerHTML = filtered.length ? filtered.map(d => `<article class="chemical-card">
+    ${chemicalVisual(d)}
+    <div class="chemical-card-body">
+      <div class="chemical-card-title" title="${escapeHtml(d.name)}">${escapeHtml(d.name || 'ไม่ระบุชื่อ')}</div>
+      <div class="chemical-card-meta">CAS ${escapeHtml(d.cas || '—')} · ${escapeHtml(d.code || 'ไม่มีรหัส')}</div>
+      <div class="chemical-card-stats">
+        <div class="chemical-stat"><div class="chemical-stat-label">คงเหลือ</div><div class="chemical-stat-value">${escapeHtml(d.remaining || '—')}</div></div>
+        <div class="chemical-stat"><div class="chemical-stat-label">ที่จัดเก็บ</div><div class="chemical-stat-value">📍 ${escapeHtml(d.location || '—')}</div></div>
+        <div class="chemical-stat"><div class="chemical-stat-label">ขนาดขวด</div><div class="chemical-stat-value">${escapeHtml(d.size || '—')}</div></div>
+        <div class="chemical-stat"><div class="chemical-stat-label">หมดอายุ</div><div class="chemical-stat-value">${escapeHtml(d.expiry || '—')}</div></div>
+      </div>
+      <div class="chemical-card-footer"><span class="chemical-card-meta">${d.updated_at ? 'อัปเดต ' + escapeHtml(fmtDateTime(d.updated_at)) : 'ยังไม่มีการอัปเดต'}</span><div class="chemical-card-actions"><button class="btn-sm btn-edit" onclick="openEditModal(${d._id})" aria-label="แก้ไข ${escapeHtml(d.name)}">✏️</button><button class="btn-sm btn-del" onclick="deleteItem(${d._id})" aria-label="ลบ ${escapeHtml(d.name)}">🗑</button></div></div>
+    </div>
+  </article>`).join('') : '<div class="no-results" style="grid-column:1/-1">ไม่พบสารเคมีที่ค้นหา 🔍</div>';
+}
+
+function setViewMode(mode) {
+  viewMode = mode;
+  document.getElementById('cardView').style.display = mode === 'cards' ? 'grid' : 'none';
+  document.getElementById('chemTable').closest('.table-wrap').style.display = mode === 'table' ? '' : 'none';
+  document.getElementById('cardViewBtn').classList.toggle('active', mode === 'cards');
+  document.getElementById('tableViewBtn').classList.toggle('active', mode === 'table');
+}
+
 function renderTable() {
   const tbody = document.getElementById('tableBody');
   if (filtered.length === 0) {
@@ -877,6 +956,8 @@ function renderTable() {
   document.getElementById('totalCount').textContent = data.length;
   document.getElementById('availCount').textContent = avail;
   updateTopbar();
+  renderCards();
+  setViewMode(viewMode);
 }
 
 function applyFilters() {
@@ -921,6 +1002,7 @@ function openAddModal() {
   ['code','name','cas','hazard','size','remaining','location','received','opened','expiry'].forEach(f => {
     document.getElementById('f_'+f).value = '';
   });
+  document.getElementById('f_image_url').value = '';
   document.getElementById('f_code').value = genNextCode();
   document.getElementById('f_extra_hazards').value = '';
   document.getElementById('modalUpdatedInfo').textContent = '';
@@ -943,6 +1025,7 @@ function openEditModal(id) {
   document.getElementById('f_received').value = d.received||'';
   document.getElementById('f_opened').value = d.opened||'';
   document.getElementById('f_expiry').value = d.expiry||'';
+  document.getElementById('f_image_url').value = d.image_url||'';
   const extras = (d.extra_hazards||'').split(',').filter(Boolean);
   document.getElementById('f_extra_hazards').value = d.extra_hazards||'';
   buildExtraPicker(extras);
@@ -976,6 +1059,7 @@ async function saveItem() {
     received: document.getElementById('f_received').value.trim(),
     opened: document.getElementById('f_opened').value.trim(),
     expiry: document.getElementById('f_expiry').value.trim(),
+    image_url: document.getElementById('f_image_url').value.trim(),
     updated_at: now,
   };
   if (editingId !== null) {
