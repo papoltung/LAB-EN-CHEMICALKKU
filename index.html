@@ -174,12 +174,14 @@ tbody td { padding: 7px 11px; vertical-align: middle; }
 .chemical-card:hover { transform:translateY(-2px); box-shadow:0 8px 22px #2d37481c; }
 .chemical-card-visual { height:142px; display:flex; align-items:center; justify-content:center; position:relative; background:linear-gradient(135deg,#ebf8ff,#f7fafc); overflow:hidden; }
 .chemical-card-visual img { width:100%; height:100%; object-fit:cover; }
+.chemical-image-placeholder { width:100%; height:100%; display:grid; place-items:center; color:#a0aec0; font-size:12px; font-weight:700; letter-spacing:.2px; }
 .chemical-card-emoji { font-size:62px; filter:drop-shadow(0 5px 5px #2d374830); }
 .ghs-icon { width:1.65rem; height:1.65rem; object-fit:contain; flex:0 0 auto; }
 .ghs-icon-sm { width:1.25rem; height:1.25rem; }
 .ghs-icon-card { width:6.5rem !important; height:6.5rem !important; object-fit:contain !important; filter:drop-shadow(0 5px 5px #2d374830); display:inline-flex; align-items:center; justify-content:center; font-size:3rem; }
 .hazard-label { display:inline-flex; align-items:center; gap:.35rem; }
-.chemical-card-hazard { position:absolute; top:10px; left:10px; padding:5px 9px; border-radius:999px; font-size:11px; font-weight:800; }
+.chemical-card-hazard { position:absolute; top:10px; left:10px; padding:5px 9px; border-radius:999px; font-size:11px; font-weight:800; opacity:0; transform:translateY(-4px); pointer-events:none; transition:opacity .18s ease, transform .18s ease; }
+.chemical-card:hover .chemical-card-hazard, .chemical-card:focus-within .chemical-card-hazard { opacity:1; transform:translateY(0); }
 .chemical-card-body { padding:14px; }
 .chemical-card-title { font-weight:800; color:#1a202c; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .chemical-card-meta { color:#718096; font-size:11px; margin-top:3px; }
@@ -189,7 +191,11 @@ tbody td { padding: 7px 11px; vertical-align: middle; }
 .chemical-stat-value { color:#2d3748; font-size:13px; font-weight:700; margin-top:2px; }
 .chemical-card-footer { display:flex; justify-content:space-between; align-items:center; margin-top:13px; padding-top:11px; border-top:1px solid #edf2f7; }
 .chemical-card-actions { display:flex; gap:5px; }
-@media (max-width:650px) { .chemical-grid { grid-template-columns:1fr; } .chemical-card-visual { height:125px; } }
+@media (max-width:650px), (hover:none) {
+  .chemical-grid { grid-template-columns:1fr; }
+  .chemical-card-visual { height:125px; }
+  .chemical-card-hazard { opacity:1; transform:translateY(0); }
+}
 /* Compact card layout matching the reference: five balanced cards on desktop. */
 @media (min-width:1200px) {
   .chemical-grid { width:calc(100% - 32px); max-width:none; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
@@ -1000,7 +1006,7 @@ function chemicalVisual(d) {
   return `<div class="chemical-card-visual" style="background:linear-gradient(135deg,${bg},#fff)">
     ${d.image_url
       ? `<img src="${escapeHtml(d.image_url)}" alt="ภาพ ${escapeHtml(d.name)}" loading="lazy" onerror="this.replaceWith(document.createTextNode('◇'))">`
-      : hazardIconHtml(d.hazard, 'ghs-icon-card', true)}
+      : `<div class="chemical-image-placeholder" aria-label="ยังไม่มีรูปสาร">ยังไม่มีรูปสาร</div>`}
     <span class="chemical-card-hazard hazard-label" style="${getBadgeStyle(d.hazard)}">${hazardIconHtml(d.hazard, 'ghs-icon ghs-icon-sm')}<span>${escapeHtml(d.hazard || 'ไม่ระบุ')}</span></span>
   </div>`;
 }
