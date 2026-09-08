@@ -1025,7 +1025,7 @@ function chemicalVisual(d) {
   </div><div class="chemical-side-main"><div class="chemical-card-title" title="${escapeHtml(d.name)}">${escapeHtml(d.name || 'ไม่ระบุชื่อ')}</div><div class="chemical-card-meta">CAS ${escapeHtml(d.cas || '—')} · ${escapeHtml(d.code || 'ไม่มีรหัส')}</div></div></div>`;
 }
 
-function renderCards() {
+function renderCardsLegacy() {
   const host = document.getElementById('cardView');
   if (!host) return;
   host.innerHTML = filtered.length ? filtered.map(d => `<article class="chemical-card">
@@ -1107,7 +1107,7 @@ let withdrawBuffer = '';
 
 function parseRemainingGrams(value) {
   const text = String(value || '').trim().replace(/,/g, '');
-  const match = text.match(/^([0-9]+(?:\.[0-9]+)?)\s*(?:g|กรัม)?$/i);
+  const match = text.match(/^([0-9]+(?:\.[0-9]+)?)\s*(?:g)?$/i);
   return match ? Number(match[1]) : null;
 }
 
