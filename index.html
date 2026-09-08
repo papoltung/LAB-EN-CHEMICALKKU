@@ -6,6 +6,7 @@
 <title>ระบบจัดการสารเคมีในแลป</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display:none !important; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #2d3748; }
 body { padding-bottom: 92px; }
 
@@ -584,6 +585,12 @@ const APP_PRODUCTION_URL = "https://lab-en-chemicalkku.vercel.app";
 
 const hasSupabaseConfig = SUPABASE_URL && !SUPABASE_URL.includes("PASTE_YOUR") && SUPABASE_KEY && !SUPABASE_KEY.includes("PASTE_YOUR");
 const supabase = hasSupabaseConfig ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+// Keep the inventory on its existing public/anon policies while Supabase Auth
+// owns the signed-in session. This preserves the data access behavior from
+// before Google Login was added.
+const inventoryClient = hasSupabaseConfig ? createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {persistSession:false, autoRefreshToken:false, detectSessionInUrl:false}
+}) : null;
 let realtimeChannel = null;
 let isSyncing = false;
 let currentUser = null;
@@ -663,7 +670,7 @@ async function logActivity(type, item, quantity = null) {
   if (!supabase || !currentUser) return false;
   const identity = currentUserIdentity();
   const actor = identity.email ? `${identity.name} (${identity.email})` : identity.name;
-  const {error} = await supabase.from('inventory_transactions').insert([{
+  const {error} = await inventoryClient.from('inventory_transactions').insert([{
     inventory_id: item?._sid || null,
     chemical_code: item?.code || null,
     chemical_name: item?.name || null,
@@ -687,7 +694,7 @@ async function openActivityModal() {
   const list = document.getElementById('activityList');
   modal.classList.add('open');
   list.innerHTML = '<div class="activity-empty">กำลังโหลด...</div>';
-  const {data: rows, error} = await supabase.from('inventory_transactions').select('*').order('created_at', {ascending:false}).limit(100);
+  const {data: rows, error} = await inventoryClient.from('inventory_transactions').select('*').order('created_at', {ascending:false}).limit(100);
   if (error) { list.innerHTML = '<div class="activity-empty">ไม่สามารถโหลดประวัติกิจกรรมได้</div>'; return; }
   if (!rows?.length) { list.innerHTML = '<div class="activity-empty">ยังไม่มีประวัติกิจกรรม</div>'; return; }
   list.innerHTML = rows.map(row => {
@@ -821,8 +828,8 @@ function fromDbRow(row) {
 }
 
 async function loadRemoteData() {
-  if (!supabase) return false;
-  const { data: rows, error } = await supabase
+  if (!inventoryClient) return false;
+  const { data: rows, error } = await inventoryClient
     .from(SUPABASE_TABLE)
     .select('*')
     .order('updated_at', { ascending: false, nullsFirst: false });
@@ -848,11 +855,11 @@ async function upsertRemoteItem(item) {
   let error;
   if (item._sid) {
     // UPDATE existing row using Supabase primary key (app_id)
-    ({ error } = await supabase.from(SUPABASE_TABLE).update(row).eq('app_id', item._sid));
+    ({ error } = await inventoryClient.from(SUPABASE_TABLE).update(row).eq('app_id', item._sid));
   } else {
     // INSERT new row — Supabase will auto-generate app_id
     let inserted;
-    ({ data: inserted, error } = await supabase.from(SUPABASE_TABLE).insert([row]).select('app_id').single());
+    ({ data: inserted, error } = await inventoryClient.from(SUPABASE_TABLE).insert([row]).select('app_id').single());
     if (!error && inserted) {
       item._sid = inserted.app_id;
       item._id  = inserted.app_id; // sync local id too
@@ -863,8 +870,8 @@ async function upsertRemoteItem(item) {
     if (Object.prototype.hasOwnProperty.call(row, 'image_url')) {
       const fallback = {...row}; delete fallback.image_url;
       const retry = item._sid
-        ? await supabase.from(SUPABASE_TABLE).update(fallback).eq('app_id', item._sid)
-        : await supabase.from(SUPABASE_TABLE).insert([fallback]).select('app_id').single();
+        ? await inventoryClient.from(SUPABASE_TABLE).update(fallback).eq('app_id', item._sid)
+        : await inventoryClient.from(SUPABASE_TABLE).insert([fallback]).select('app_id').single();
       if (!retry.error) {
         if (!item._sid && retry.data) { item._sid = retry.data.app_id; item._id = retry.data.app_id; }
         return true;
@@ -880,7 +887,7 @@ async function upsertRemoteItem(item) {
 async function deleteRemoteItemById(item) {
   if (!supabase) return true;
   if (!item._sid) return true; // no Supabase row to delete
-  const { error } = await supabase.from(SUPABASE_TABLE).delete().eq('app_id', item._sid);
+  const { error } = await inventoryClient.from(SUPABASE_TABLE).delete().eq('app_id', item._sid);
   if (error) {
     console.error(error);
     alert('ลบข้อมูลจากฐานข้อมูลไม่สำเร็จ: ' + error.message);
@@ -894,13 +901,13 @@ async function replaceAllRemoteData(items) {
   isSyncing = true;
   try {
     // Delete all rows — app_id is Supabase primary key, always > 0
-    const { error: delError } = await supabase.from(SUPABASE_TABLE).delete().gt('app_id', 0);
+    const { error: delError } = await inventoryClient.from(SUPABASE_TABLE).delete().gt('app_id', 0);
     if (delError) throw delError;
     if (items.length > 0) {
       // Insert in batches of 500 to avoid payload limits
       for (let i = 0; i < items.length; i += 500) {
         const batch = items.slice(i, i + 500).map(toDbRow);
-        const { error: insertError } = await supabase.from(SUPABASE_TABLE).insert(batch);
+        const { error: insertError } = await inventoryClient.from(SUPABASE_TABLE).insert(batch);
         if (insertError) throw insertError;
       }
     }
@@ -916,7 +923,7 @@ async function replaceAllRemoteData(items) {
 
 function watchRealtime() {
   if (!supabase || realtimeChannel) return;
-  realtimeChannel = supabase
+  realtimeChannel = inventoryClient
     .channel('inventory-live')
     .on('postgres_changes', { event: '*', schema: 'public', table: SUPABASE_TABLE }, async () => {
       if (isSyncing) return;
@@ -1298,9 +1305,9 @@ async function uploadChemicalImage(file, itemCode) {
   const ext = file.type.split('/')[1].replace('jpeg', 'jpg');
   const safeCode = (itemCode || 'chemical').replace(/[^a-zA-Z0-9_-]/g, '_');
   const path = `${safeCode}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from(SUPABASE_IMAGE_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+  const { error } = await inventoryClient.storage.from(SUPABASE_IMAGE_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
   if (error) { alert('อัปโหลดรูปไม่สำเร็จ: ' + error.message); return null; }
-  return supabase.storage.from(SUPABASE_IMAGE_BUCKET).getPublicUrl(path).data.publicUrl;
+  return inventoryClient.storage.from(SUPABASE_IMAGE_BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
 function chemicalVisual(d) {
