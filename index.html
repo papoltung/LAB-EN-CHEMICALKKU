@@ -1361,6 +1361,29 @@ function genNextCode() {
   return prefix + String(next).padStart(6, '0');
 }
 
+function dateToInputValue(value) {
+  const text = String(value || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  const match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  return match ? `${match[3]}-${String(match[2]).padStart(2,'0')}-${String(match[1]).padStart(2,'0')}` : '';
+}
+
+function dateToStorageValue(value) {
+  const text = String(value || '').trim();
+  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : text;
+}
+
+function upgradeDateInputs() {
+  ['received','opened','expiry'].forEach(key => {
+    const input = document.getElementById(`f_${key}`);
+    if (!input) return;
+    input.type = 'date';
+    input.removeAttribute('placeholder');
+    input.setAttribute('aria-label', key === 'received' ? 'วันที่รับเข้า' : key === 'opened' ? 'วันที่เปิดใช้ขวด' : 'วันหมดอายุ');
+  });
+}
+
 function openAddModal() {
   editingId = null;
   document.getElementById('modalTitle').textContent = '➕ เพิ่มสารเคมีใหม่';
@@ -1388,9 +1411,9 @@ function openEditModal(id) {
   document.getElementById('f_size').value = d.size||'';
   document.getElementById('f_remaining').value = d.remaining||'';
   document.getElementById('f_location').value = d.location||'';
-  document.getElementById('f_received').value = d.received||'';
-  document.getElementById('f_opened').value = d.opened||'';
-  document.getElementById('f_expiry').value = d.expiry||'';
+  document.getElementById('f_received').value = dateToInputValue(d.received);
+  document.getElementById('f_opened').value = dateToInputValue(d.opened);
+  document.getElementById('f_expiry').value = dateToInputValue(d.expiry);
   document.getElementById('f_image_url').value = d.image_url||'';
   document.getElementById('f_image_file').value = '';
   const extras = (d.extra_hazards||'').split(',').filter(Boolean);
@@ -1429,9 +1452,9 @@ async function saveItem() {
     size: document.getElementById('f_size').value.trim(),
     remaining: document.getElementById('f_remaining').value.trim(),
     location: document.getElementById('f_location').value.trim(),
-    received: document.getElementById('f_received').value.trim(),
-    opened: document.getElementById('f_opened').value.trim(),
-    expiry: document.getElementById('f_expiry').value.trim(),
+    received: dateToStorageValue(document.getElementById('f_received').value),
+    opened: dateToStorageValue(document.getElementById('f_opened').value),
+    expiry: dateToStorageValue(document.getElementById('f_expiry').value),
     image_url: imageUrl,
     updated_at: now,
   };
@@ -1645,6 +1668,7 @@ Object.assign(window, {
   renameLocation, deleteLocation, sortBy, openEditModal, closeModal, saveItem, deleteItem
 });
 
+upgradeDateInputs();
 initializeApp();
 </script>
 </body>
