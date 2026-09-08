@@ -286,6 +286,11 @@ body { background:#F8FAFC; color:#0F172A; }
   .chemical-side-visual { width:88px; min-width:88px; height:88px; }
   .chemical-side-main .chemical-card-title { font-size:17px; }
 }
+/* Windows display scaling can report a narrow CSS viewport on a wide desktop. */
+@media (min-width:900px) {
+  .lab-bottom-nav { display:none !important; }
+  body { padding-bottom:0; }
+}
 </style>
 </head>
 <body>
