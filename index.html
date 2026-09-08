@@ -267,6 +267,9 @@ body { background:#F8FAFC; color:#0F172A; }
 .chemical-card-actions .btn-edit,.chemical-card-actions .btn-del { font-size:0; }
 .chemical-card-actions .btn-edit::after { content:'✎'; font-size:16px; }
 .chemical-card-actions .btn-del::after { content:'⌫'; font-size:15px; }
+.form-group select#f_hazard,.form-group select#f_location { appearance:none; -webkit-appearance:none; background:#FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364758B' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center !important; padding-right:38px; cursor:pointer; color:#0F172A; }
+.form-group select#f_hazard:hover,.form-group select#f_location:hover { border-color:#93C5FD !important; }
+.form-group select#f_hazard:focus,.form-group select#f_location:focus { border-color:#2563EB !important; box-shadow:0 0 0 3px rgba(37,99,235,.12) !important; }
 .toolbar { background:#FFFFFF; border-color:#E2E8F0; }
 .toolbar .search-wrap { flex:1 1 420px; }
 .toolbar .btn-primary { background:#2563EB; }
@@ -854,7 +857,21 @@ async function deleteHazardType(idx) {
 }
 
 function rebuildHazardDropdown() {
-  // f_hazard is now a text input with datalist
+  const oldField = document.getElementById('f_hazard');
+  if (oldField && oldField.tagName === 'INPUT') {
+    const select = document.createElement('select');
+    select.id = 'f_hazard';
+    select.setAttribute('aria-label', 'ประเภทความอันตราย');
+    select.className = oldField.className;
+    oldField.replaceWith(select);
+  }
+  const field = document.getElementById('f_hazard');
+  if (field) {
+    const current = field.value;
+    field.innerHTML = '<option value="">เลือกประเภทความอันตราย</option>' + hazardTypes.map(h => `<option value="${escapeHtml(h.key)}">${escapeHtml(h.key)}</option>`).join('');
+    field.value = current;
+  }
+  // Keep the legacy datalist harmless if it exists in older cached markup.
   const dl = document.getElementById('hazardDatalist');
   if (dl) {
     dl.innerHTML = hazardTypes.map(h => `<option value="${escapeHtml(h.key)}">${escapeHtml(h.key)}</option>`).join('');
@@ -901,7 +918,7 @@ function syncExtraHazards() {
 }
 
 // Rebuild picker when main hazard changes
-document.getElementById('f_hazard').addEventListener('input', () => {
+document.getElementById('f_hazard').addEventListener('change', () => {
   const cur = (document.getElementById('f_extra_hazards').value || '').split(',').filter(Boolean);
   buildExtraPicker(cur);
 });
@@ -919,6 +936,20 @@ function rebuildLocDropdown() {
     if (l === cur) o.selected = true;
     sel.appendChild(o);
   });
+  const oldLocationField = document.getElementById('f_location');
+  if (oldLocationField && oldLocationField.tagName === 'INPUT') {
+    const locationSelect = document.createElement('select');
+    locationSelect.id = 'f_location';
+    locationSelect.setAttribute('aria-label', 'ที่จัดเก็บ');
+    locationSelect.className = oldLocationField.className;
+    oldLocationField.replaceWith(locationSelect);
+  }
+  const locationField = document.getElementById('f_location');
+  if (locationField) {
+    const currentLocation = locationField.value;
+    locationField.innerHTML = '<option value="">เลือกที่จัดเก็บ</option>' + locations.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
+    locationField.value = currentLocation;
+  }
   // Also update f_location datalist
   let dl = document.getElementById('locDatalist');
   if (!dl) { dl = document.createElement('datalist'); dl.id = 'locDatalist'; document.body.appendChild(dl); }
