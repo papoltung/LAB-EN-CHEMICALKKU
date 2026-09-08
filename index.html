@@ -291,6 +291,11 @@ body { background:#F8FAFC; color:#0F172A; }
   .lab-bottom-nav { display:none !important; }
   body { padding-bottom:0; }
 }
+@media (min-width:1024px) {
+  #modal > .modal { width:760px; max-width:calc(100vw - 64px); }
+  #modal .form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 16px; }
+  #modal input[type="date"] { min-height:44px; }
+}
 </style>
 </head>
 <body>
