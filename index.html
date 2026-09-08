@@ -318,7 +318,7 @@ tbody td { padding: 7px 11px; vertical-align: middle; }
       <div class="form-group"><label>วันที่รับเข้ามา</label><input type="text" id="f_received" placeholder="DD/MM/YYYY"></div>
       <div class="form-group"><label>วันที่เปิดใช้ขวด</label><input type="text" id="f_opened" placeholder="DD/MM/YYYY"></div>
       <div class="form-group"><label>วันหมดอายุ</label><input type="text" id="f_expiry" placeholder="DD/MM/YYYY"></div>
-      <div class="form-group full"><label>ลิงก์รูปสาร (ถ้ามี)</label><input type="url" id="f_image_url" placeholder="https://.../chemical.jpg"><small style="display:block;color:#a0aec0;margin-top:4px">ถ้าไม่ใส่ ระบบจะแสดงภาพไอคอนตามประเภทอันตรายอัตโนมัติ</small></div>
+      <div class="form-group full"><label>รูปสารเคมี</label><input type="file" id="f_image_file" accept="image/jpeg,image/png,image/webp"><input type="url" id="f_image_url" placeholder="หรือวางลิงก์รูปเดิม https://..." style="margin-top:6px"><small style="display:block;color:#a0aec0;margin-top:4px">รูปจะอัปโหลดเข้า Supabase Storage คลัง chemical-images อัตโนมัติ</small></div>
       <div class="form-group full">
         <label>ความอันตรายเพิ่มเติม <span style="font-weight:400;color:#a0aec0">(ไม่กระทบการจัดกลุ่ม — คลิกเลือกได้หลายอัน)</span></label>
         <div id="extraHazardPicker" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1.5px solid #cbd5e0;border-radius:8px;min-height:40px;cursor:pointer;background:white"></div>
@@ -340,6 +340,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const SUPABASE_URL = "https://cxoqxjgzpzlrlpxjlhpt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_lWz8MJ0tVkL7H49Kn5veYQ__PTQZOPM";
 const SUPABASE_TABLE = "inventory";
+const SUPABASE_IMAGE_BUCKET = "chemical-images";
 
 const hasSupabaseConfig = SUPABASE_URL && !SUPABASE_URL.includes("PASTE_YOUR") && SUPABASE_KEY && !SUPABASE_KEY.includes("PASTE_YOUR");
 const supabase = hasSupabaseConfig ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
@@ -869,6 +870,18 @@ function getBadgeIcon(h) {
   return ht ? ht.icon + ' ' : '';
 }
 
+async function uploadChemicalImage(file, itemCode) {
+  if (!supabase || !file) return null;
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { alert('รองรับเฉพาะ JPG, PNG หรือ WebP'); return null; }
+  if (file.size > 5 * 1024 * 1024) { alert('รูปต้องมีขนาดไม่เกิน 5 MB'); return null; }
+  const ext = file.type.split('/')[1].replace('jpeg', 'jpg');
+  const safeCode = (itemCode || 'chemical').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const path = `${safeCode}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from(SUPABASE_IMAGE_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+  if (error) { alert('อัปโหลดรูปไม่สำเร็จ: ' + error.message); return null; }
+  return supabase.storage.from(SUPABASE_IMAGE_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
 function chemicalVisual(d) {
   const ht = hazardTypes.find(x => x.key === d.hazard);
   const bg = ht?.color || '#ebf8ff';
@@ -1003,6 +1016,7 @@ function openAddModal() {
     document.getElementById('f_'+f).value = '';
   });
   document.getElementById('f_image_url').value = '';
+  document.getElementById('f_image_file').value = '';
   document.getElementById('f_code').value = genNextCode();
   document.getElementById('f_extra_hazards').value = '';
   document.getElementById('modalUpdatedInfo').textContent = '';
@@ -1026,6 +1040,7 @@ function openEditModal(id) {
   document.getElementById('f_opened').value = d.opened||'';
   document.getElementById('f_expiry').value = d.expiry||'';
   document.getElementById('f_image_url').value = d.image_url||'';
+  document.getElementById('f_image_file').value = '';
   const extras = (d.extra_hazards||'').split(',').filter(Boolean);
   document.getElementById('f_extra_hazards').value = d.extra_hazards||'';
   buildExtraPicker(extras);
@@ -1040,6 +1055,12 @@ async function saveItem() {
   const name = document.getElementById('f_name').value.trim();
   if (!name) { alert('กรุณากรอกชื่อสารเคมี'); return; }
   const now = new Date().toISOString();
+  const imageFile = document.getElementById('f_image_file').files[0];
+  let imageUrl = document.getElementById('f_image_url').value.trim();
+  if (imageFile) {
+    imageUrl = await uploadChemicalImage(imageFile, document.getElementById('f_code').value.trim()) || imageUrl;
+    if (!imageUrl) return;
+  }
   const extraRaw = document.getElementById('f_extra_hazards').value;
   // ถ้ามีการพิมพ์ประเภทหลักใหม่ที่ยังไม่มีใน hazardTypes ให้เพิ่มอัตโนมัติ
   const mainHaz = document.getElementById('f_hazard').value.trim();
@@ -1059,7 +1080,7 @@ async function saveItem() {
     received: document.getElementById('f_received').value.trim(),
     opened: document.getElementById('f_opened').value.trim(),
     expiry: document.getElementById('f_expiry').value.trim(),
-    image_url: document.getElementById('f_image_url').value.trim(),
+    image_url: imageUrl,
     updated_at: now,
   };
   if (editingId !== null) {
