@@ -243,14 +243,14 @@ body { background:#F8FAFC; color:#0F172A; }
 .chemical-grid { width:calc(100% - 32px); max-width:1440px; margin:16px auto 0; padding:0; gap:16px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
 .chemical-card { background:#FFFFFF; border:1px solid #E2E8F0; border-radius:20px; box-shadow:0 2px 10px rgba(15,23,42,.05); overflow:hidden; transition:transform .18s ease,box-shadow .18s ease; }
 .chemical-card:hover { transform:translateY(-2px); box-shadow:0 7px 18px rgba(15,23,42,.08); }
-.chemical-card-side { gap:14px; padding:16px 16px 0; }
-.chemical-side-visual { width:96px; min-width:96px; height:96px; border-radius:14px; background:#F8FAFC !important; border:1px solid #E2E8F0; }
+.chemical-card-side { position:relative; gap:14px; padding:16px 16px 0; }
+.chemical-side-visual { position:static; width:96px; min-width:96px; height:96px; border-radius:14px; background:#F8FAFC !important; border:1px solid #E2E8F0; overflow:visible; }
 .chemical-side-visual img { object-fit:contain; background:#FFFFFF; }
 .chemical-image-placeholder { color:#94A3B8; font-size:11px; font-weight:600; text-align:center; }
 .chemical-image-placeholder::before { content:''; display:block; width:24px; height:18px; margin:0 auto 5px; border:1.5px solid #94A3B8; border-radius:4px; background:linear-gradient(135deg,transparent 48%,#CBD5E1 49% 55%,transparent 56%); }
 .chemical-side-main .chemical-card-title { color:#0F172A; font-size:18px; font-weight:700; line-height:1.25; }
 .chemical-side-main .chemical-card-meta { color:#64748B; font-size:12px; }
-.chemical-card-hazard { top:8px; left:8px; display:inline-flex; align-items:center; gap:5px; padding:5px 9px; background:rgba(255,255,255,.95) !important; color:#334155 !important; border:1px solid #E2E8F0; border-radius:999px; font-size:11px; font-weight:700; box-shadow:0 2px 6px rgba(15,23,42,.08); }
+.chemical-card-hazard { top:3px; left:16px; display:inline-flex; align-items:center; gap:5px; padding:4px 8px; background:rgba(255,255,255,.97) !important; color:#334155 !important; border:1px solid #E2E8F0; border-radius:999px; font-size:11px; font-weight:700; box-shadow:0 2px 6px rgba(15,23,42,.08); z-index:3; }
 .chemical-card-hazard .ghs-icon { width:18px; height:18px; }
 .chemical-card-side + .chemical-card-body { padding:12px 16px 16px; }
 .chemical-card-stats { gap:6px; }
