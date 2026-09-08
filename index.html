@@ -7,6 +7,7 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #2d3748; }
+body { padding-bottom: 92px; }
 
 .topbar {
   background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%);
@@ -184,6 +185,14 @@ tbody td { padding: 7px 11px; vertical-align: middle; }
   .chemical-stat { padding:9px; }
 }
 .ghs-icon-card { width:100% !important; height:100% !important; max-width:100%; padding:16px; object-fit:contain !important; }
+.lab-bottom-nav { position:fixed; left:50%; bottom:12px; transform:translateX(-50%); z-index:90; width:min(620px,calc(100% - 24px)); display:grid; grid-template-columns:repeat(5,1fr); gap:4px; padding:7px; background:rgba(255,255,255,.96); border:1px solid #e2e8f0; border-radius:22px; box-shadow:0 14px 36px rgba(15,23,42,.16); backdrop-filter:blur(14px); }
+.lab-bottom-nav button { border:0; background:transparent; color:#64748b; min-height:56px; border-radius:15px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font:700 11px 'Segoe UI',sans-serif; cursor:pointer; }
+.lab-bottom-nav button:hover { background:#f8fafc; color:#2563eb; }
+.lab-bottom-nav button.active { background:#eff6ff; color:#2563eb; }
+.lab-bottom-nav button.primary { min-height:60px; margin-top:-12px; background:#2563eb; color:white; border-radius:17px; box-shadow:0 8px 18px rgba(37,99,235,.25); }
+.lab-bottom-nav button.primary:hover { background:#1d4ed8; color:white; }
+.nav-icon { width:20px; height:20px; display:grid; place-items:center; font-size:18px; line-height:1; }
+@media (max-width:650px) { .lab-bottom-nav { bottom:8px; width:calc(100% - 16px); } .lab-bottom-nav button { min-height:52px; font-size:10px; } }
 .chemical-card-main { display:flex; gap:14px; padding:14px 14px 0; align-items:flex-start; }
 .chemical-card-main .chemical-card-visual { width:104px; height:104px; flex:0 0 104px; border-radius:16px; }
 .chemical-card-main .ghs-icon-card { padding:7px; }
@@ -280,6 +289,14 @@ tbody td { padding: 7px 11px; vertical-align: middle; }
 </table>
 <div id="noResults" class="no-results" style="display:none">ไม่พบสารเคมีที่ค้นหา 🔍</div>
 </div>
+
+<nav class="lab-bottom-nav" aria-label="เมนูหลัก">
+  <button id="navHome" class="active" onclick="goHome()"><span class="nav-icon">⌂</span><span>หน้าหลัก</span></button>
+  <button id="navSearch" onclick="focusSearch()"><span class="nav-icon">⌕</span><span>ค้นหา</span></button>
+  <button class="primary" onclick="openAddModal()"><span class="nav-icon">＋</span><span>เพิ่มสาร</span></button>
+  <button id="navLocation" onclick="openLocModal()"><span class="nav-icon">▦</span><span>ที่จัดเก็บ</span></button>
+  <button id="navHazard" onclick="openHazardModal()"><span class="nav-icon">△</span><span>อันตราย</span></button>
+</nav>
 
 <!-- Hazard Type Manager Modal -->
 <div class="modal-overlay" id="hazardModal">
@@ -973,6 +990,27 @@ function setViewMode(mode) {
   document.getElementById('tableViewBtn').classList.toggle('active', mode === 'table');
 }
 
+function setNavActive(id) {
+  document.querySelectorAll('.lab-bottom-nav button').forEach(button => button.classList.remove('active'));
+  if (id) document.getElementById(id)?.classList.add('active');
+}
+
+function goHome() {
+  document.getElementById('searchBox').value = '';
+  document.getElementById('locationFilter').value = '';
+  activeHazard = '';
+  setViewMode('cards');
+  setNavActive('navHome');
+  applyFilters();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function focusSearch() {
+  setNavActive('navSearch');
+  document.getElementById('searchBox').focus();
+  document.getElementById('searchBox').scrollIntoView({behavior: 'smooth', block: 'center'});
+}
+
 function renderTable() {
   const tbody = document.getElementById('tableBody');
   if (filtered.length === 0) {
@@ -1339,7 +1377,7 @@ document.addEventListener('drop', e => {
 
 
 Object.assign(window, {
-  applyFilters, openAddModal, exportCSV, handleImportFile, openLocModal, openHazardModal, setViewMode,
+  applyFilters, openAddModal, exportCSV, handleImportFile, openLocModal, openHazardModal, setViewMode, goHome, focusSearch,
   closeHazardModal, addHazardType, editHazardType, deleteHazardType, closeLocModal, addLocation,
   renameLocation, deleteLocation, sortBy, openEditModal, closeModal, saveItem, deleteItem
 });
