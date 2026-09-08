@@ -149,6 +149,21 @@ tbody td { padding: 7px 11px; vertical-align: middle; }
 .form-group input:focus, .form-group select:focus { outline: none; border-color: #3182ce; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
 .modal-updated { font-size: 11px; color: #a0aec0; margin-top: 6px; text-align: right; }
+.withdraw-modal { width: 390px; max-width: 94vw; }
+.withdraw-summary { background:#f7fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; margin-bottom:14px; }
+.withdraw-summary-name { font-size:16px; font-weight:800; color:#1a365d; }
+.withdraw-summary-stock { margin-top:4px; color:#718096; font-size:12px; }
+.withdraw-amount { text-align:center; font-size:28px; font-weight:800; letter-spacing:.4px; color:#1a365d; padding:8px 0 14px; }
+.withdraw-keypad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.withdraw-key { min-height:48px; border:1px solid #dbe4ee; border-radius:10px; background:#fff; color:#1a365d; font:700 17px 'Segoe UI',sans-serif; cursor:pointer; }
+.withdraw-key:hover { border-color:#3182ce; background:#ebf8ff; }
+.withdraw-key.backspace { grid-column:1 / -1; }
+.withdraw-key.confirm { background:#2b6cb0; color:#fff; border-color:#2b6cb0; flex:1; }
+.withdraw-key.confirm:hover { background:#1a5a96; }
+.withdraw-footer { display:flex; gap:8px; margin-top:14px; }
+.withdraw-footer .btn { flex:1; }
+.btn-sm.btn-withdraw { background:#ebf8ff; color:#2b6cb0; border-color:#bee3f8; }
+.btn-sm.btn-withdraw:hover { background:#bee3f8; }
 
 .no-results { text-align: center; padding: 60px; color: #a0aec0; font-size: 15px; }
 .view-toggle { display:flex; gap:4px; padding:4px; background:#edf2f7; border-radius:10px; }
@@ -335,6 +350,37 @@ tbody td { padding: 7px 11px; vertical-align: middle; }
     <div id="locList" style="max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn" style="background:#e2e8f0;color:#4a5568" onclick="closeLocModal()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- Withdraw chemical modal -->
+<div class="modal-overlay" id="withdrawModal">
+  <div class="modal withdraw-modal" role="dialog" aria-modal="true" aria-labelledby="withdrawTitle">
+    <h2 id="withdrawTitle">เบิกสารมาใช้</h2>
+    <div class="withdraw-summary">
+      <div class="withdraw-summary-name" id="withdrawChemicalName">—</div>
+      <div class="withdraw-summary-stock" id="withdrawChemicalStock">คงเหลือ —</div>
+    </div>
+    <div class="withdraw-amount" id="withdrawAmount" aria-live="polite">0.00 g</div>
+    <div class="withdraw-keypad" aria-label="แป้นตัวเลขสำหรับกรอกจำนวน">
+      <button type="button" class="withdraw-key" onclick="withdrawKey('1')">1</button>
+      <button type="button" class="withdraw-key" onclick="withdrawKey('2')">2</button>
+      <button type="button" class="withdraw-key" onclick="withdrawKey('3')">3</button>
+      <button type="button" class="withdraw-key" onclick="withdrawKey('4')">4</button>
+      <button type="button" class="withdraw-key" onclick="withdrawKey('5')">5</button>
+      <button type="button" class="withdraw-key" onclick="withdrawKey('6')">6</button>
+      <button type="button" class="withdraw-key" onclick="withdrawKey('7')">7</button>
+      <button type="button" class="withdraw-key" onclick="withdrawKey('8')">8</button>
+      <button type="button" class="withdraw-key" onclick="withdrawKey('9')">9</button>
+      <button type="button" class="withdraw-key" onclick="withdrawKey('00')">00</button>
+      <button type="button" class="withdraw-key" onclick="withdrawKey('0')">0</button>
+      <button type="button" class="withdraw-key" onclick="withdrawKey('.')">.</button>
+      <button type="button" class="withdraw-key backspace" onclick="withdrawBackspace()">⌫</button>
+    </div>
+    <div class="withdraw-footer">
+      <button type="button" class="btn" style="background:#e2e8f0;color:#4a5568" onclick="closeWithdrawModal()">ยกเลิก</button>
+      <button type="button" class="btn withdraw-key confirm" onclick="confirmWithdraw()">ยืนยันการเบิก</button>
     </div>
   </div>
 </div>
@@ -977,7 +1023,7 @@ function renderCards() {
         <div class="chemical-stat"><div class="chemical-stat-label">ขนาดขวด</div><div class="chemical-stat-value">${escapeHtml(d.size || '—')}</div></div>
         <div class="chemical-stat"><div class="chemical-stat-label">หมดอายุ</div><div class="chemical-stat-value">${escapeHtml(d.expiry || '—')}</div></div>
       </div>
-      <div class="chemical-card-footer"><span class="chemical-card-meta">${d.updated_at ? 'อัปเดต ' + escapeHtml(fmtDateTime(d.updated_at)) : 'ยังไม่มีการอัปเดต'}</span><div class="chemical-card-actions"><button class="btn-sm btn-edit" onclick="openEditModal(${d._id})" aria-label="แก้ไข ${escapeHtml(d.name)}">✏️</button><button class="btn-sm btn-del" onclick="deleteItem(${d._id})" aria-label="ลบ ${escapeHtml(d.name)}">🗑</button></div></div>
+      <div class="chemical-card-footer"><span class="chemical-card-meta">${d.updated_at ? 'อัปเดต ' + escapeHtml(fmtDateTime(d.updated_at)) : 'ยังไม่มีการอัปเดต'}</span><div class="chemical-card-actions"><button class="btn-sm btn-withdraw" onclick="openWithdrawModal(${d._id})" aria-label="เบิก ${escapeHtml(d.name)}">เบิก</button><button class="btn-sm btn-edit" onclick="openEditModal(${d._id})" aria-label="แก้ไข ${escapeHtml(d.name)}">✏️</button><button class="btn-sm btn-del" onclick="deleteItem(${d._id})" aria-label="ลบ ${escapeHtml(d.name)}">🗑</button></div></div>
     </div>
   </article>`).join('') : '<div class="no-results" style="grid-column:1/-1">ไม่พบสารเคมีที่ค้นหา 🔍</div>';
 }
@@ -1009,6 +1055,95 @@ function focusSearch() {
   setNavActive('navSearch');
   document.getElementById('searchBox').focus();
   document.getElementById('searchBox').scrollIntoView({behavior: 'smooth', block: 'center'});
+}
+
+let withdrawItemId = null;
+let withdrawBuffer = '';
+
+function parseRemainingGrams(value) {
+  const text = String(value || '').trim().replace(/,/g, '');
+  const match = text.match(/^([0-9]+(?:\.[0-9]+)?)\s*(?:g|กรัม)?$/i);
+  return match ? Number(match[1]) : null;
+}
+
+function formatGrams(value) {
+  return `${Number(value).toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')} g`;
+}
+
+function updateWithdrawDisplay() {
+  const amount = withdrawBuffer ? Number(withdrawBuffer) : 0;
+  document.getElementById('withdrawAmount').textContent = `${Number.isFinite(amount) ? amount.toFixed(2) : '0.00'} g`;
+}
+
+function openWithdrawModal(id) {
+  const item = data.find(x => x._id === id);
+  if (!item) return;
+  const available = parseRemainingGrams(item.remaining);
+  if (available === null) {
+    alert('รายการนี้ยังไม่มีคงเหลือเป็นตัวเลข เช่น 1000 g กรุณาแก้ข้อมูลคงเหลือก่อนเบิก');
+    return;
+  }
+  withdrawItemId = id;
+  withdrawBuffer = '';
+  document.getElementById('withdrawChemicalName').textContent = item.name || 'ไม่ระบุชื่อสาร';
+  document.getElementById('withdrawChemicalStock').textContent = `คงเหลือ ${formatGrams(available)}`;
+  updateWithdrawDisplay();
+  document.getElementById('withdrawModal').classList.add('open');
+}
+
+function closeWithdrawModal() {
+  document.getElementById('withdrawModal').classList.remove('open');
+  withdrawItemId = null;
+  withdrawBuffer = '';
+}
+
+function withdrawKey(key) {
+  if (key === '.' && withdrawBuffer.includes('.')) return;
+  if (withdrawBuffer === '0' && key !== '.') withdrawBuffer = '';
+  if (withdrawBuffer.length >= 9) return;
+  withdrawBuffer += key;
+  updateWithdrawDisplay();
+}
+
+function withdrawBackspace() {
+  withdrawBuffer = withdrawBuffer.slice(0, -1);
+  updateWithdrawDisplay();
+}
+
+async function confirmWithdraw() {
+  const item = data.find(x => x._id === withdrawItemId);
+  const quantity = Number(withdrawBuffer);
+  if (!item || !Number.isFinite(quantity) || quantity <= 0) {
+    alert('กรุณากรอกจำนวนที่ต้องการเบิก');
+    return;
+  }
+  const available = parseRemainingGrams(item.remaining);
+  if (available === null || quantity > available) {
+    alert(`จำนวนที่เบิกเกินคงเหลือ (${formatGrams(available || 0)})`);
+    return;
+  }
+  const nextRemaining = formatGrams(available - quantity);
+  const updated = {...item, remaining: nextRemaining, updated_at: new Date().toISOString()};
+  if (!(await upsertRemoteItem(updated))) return;
+  const idx = data.findIndex(x => x._id === item._id);
+  if (idx >= 0) data[idx] = updated;
+  if (supabase) {
+    const withdrawnBy = localStorage.getItem('user_name') || localStorage.getItem('sellerName') || 'ผู้ใช้งาน';
+    const {error} = await supabase.from('inventory_transactions').insert([{
+      inventory_id: item._sid || null,
+      chemical_code: item.code || null,
+      chemical_name: item.name || null,
+      transaction_type: 'withdrawal',
+      quantity,
+      unit: 'g',
+      withdrawn_by: withdrawnBy,
+      created_at: new Date().toISOString()
+    }]);
+    if (error) console.warn('บันทึกประวัติการเบิกไม่สำเร็จ แต่ยอดคงเหลือถูกบันทึกแล้ว:', error.message);
+  }
+  closeWithdrawModal();
+  refreshDerivedData();
+  applyFilters();
 }
 
 function renderTable() {
@@ -1048,6 +1183,7 @@ function renderTable() {
         <td style="font-size:11px">${escapeHtml(d.expiry)}</td>
         <td>${updCell}</td>
         <td style="white-space:nowrap">
+          <button class="btn-sm btn-withdraw" onclick="openWithdrawModal(${d._id})">เบิก</button>
           <button class="btn-sm btn-edit" onclick="openEditModal(${d._id})">✏️</button>
           <button class="btn-sm btn-del" onclick="deleteItem(${d._id})">🗑</button>
         </td>
@@ -1378,6 +1514,7 @@ document.addEventListener('drop', e => {
 
 Object.assign(window, {
   applyFilters, openAddModal, exportCSV, handleImportFile, openLocModal, openHazardModal, setViewMode, goHome, focusSearch,
+  openWithdrawModal, closeWithdrawModal, withdrawKey, withdrawBackspace, confirmWithdraw,
   closeHazardModal, addHazardType, editHazardType, deleteHazardType, closeLocModal, addLocation,
   renameLocation, deleteLocation, sortBy, openEditModal, closeModal, saveItem, deleteItem
 });
