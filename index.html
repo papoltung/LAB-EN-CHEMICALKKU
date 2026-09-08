@@ -1271,11 +1271,11 @@ function isRecent(iso) {
 function updateTopbar() {
   const edited = data.filter(d => d.updated_at).sort((a,b) => b.updated_at.localeCompare(a.updated_at));
   if (edited.length > 0) {
-    document.getElementById('lastUpdateTime').textContent = fmtDateTime(edited[0].updated_at);
-    document.getElementById('lastUpdateBy').textContent = `"${edited[0].name.substring(0,25)}${edited[0].name.length>25?'…':''}"`;
+    if (document.getElementById('lastUpdateTime')) document.getElementById('lastUpdateTime').textContent = fmtDateTime(edited[0].updated_at);
+    if (document.getElementById('lastUpdateBy')) document.getElementById('lastUpdateBy').textContent = `"${edited[0].name.substring(0,25)}${edited[0].name.length>25?'…':''}"`;
     document.getElementById('statLastEdit').textContent = fmtDateTime(edited[0].updated_at);
   } else {
-    document.getElementById('lastUpdateTime').textContent = 'ยังไม่มีการแก้ไข';
+    if (document.getElementById('lastUpdateTime')) document.getElementById('lastUpdateTime').textContent = 'ยังไม่มีการแก้ไข';
     document.getElementById('statLastEdit').textContent = '—';
   }
 }
