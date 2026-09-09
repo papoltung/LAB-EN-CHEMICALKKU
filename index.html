@@ -342,6 +342,77 @@ body { background:#F8FAFC; color:#0F172A; }
   .activity-item { grid-template-columns:32px 1fr; }
   .activity-time { grid-column:2; }
 }
+
+/* Compact, accessible chemical editor */
+#modal { padding:24px; background:rgba(15,23,42,.52); backdrop-filter:blur(4px); }
+#modal .inventory-modal {
+  width:min(920px,100%); max-width:920px; max-height:min(92vh,920px); padding:0;
+  border:1px solid #E2E8F0; border-radius:20px; box-shadow:0 24px 64px rgba(15,23,42,.2);
+  background:#FFFFFF; color:#0F172A;
+}
+.inventory-modal-header {
+  position:sticky; top:0; z-index:5; display:flex; align-items:flex-start; justify-content:space-between;
+  gap:16px; padding:20px 24px 16px; background:rgba(255,255,255,.97); border-bottom:1px solid #E2E8F0;
+}
+.inventory-modal-header h2 { margin:2px 0 3px; color:#0F172A; font-size:1.25rem; line-height:1.35; letter-spacing:-.01em; }
+.inventory-modal-header p { margin:0; color:#64748B; font-size:.8125rem; }
+.modal-eyebrow { color:#2563EB; font-size:.6875rem; font-weight:800; letter-spacing:.1em; }
+.modal-close {
+  display:grid; place-items:center; width:38px; height:38px; flex:0 0 auto; padding:0; border:1px solid #E2E8F0;
+  border-radius:10px; background:#FFFFFF; color:#64748B; font:400 1.5rem/1 system-ui; cursor:pointer;
+}
+.modal-close:hover { background:#F8FAFC; color:#0F172A; }
+#chemicalForm { padding:18px 24px 0; }
+.form-section { margin:0 0 16px; padding:0; border:0; }
+.form-section legend { width:100%; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid #E2E8F0; color:#334155; font-size:.8125rem; font-weight:750; }
+#modal .form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 16px; }
+#modal .form-grid-three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+#modal .form-grid-dates { grid-template-columns:repeat(2,minmax(0,1fr)); }
+#modal .form-group { gap:6px; min-width:0; }
+#modal .form-group label { color:#475569; font-size:.75rem; font-weight:650; letter-spacing:0; text-transform:none; }
+#modal .field-hint { color:#94A3B8; font-weight:450; }
+#modal .required-mark { color:#DC2626; }
+#modal .form-group input,
+#modal .form-group select {
+  min-height:44px; padding:10px 12px; border:1px solid #CBD5E1; border-radius:10px;
+  background:#FFFFFF; color:#0F172A; font:400 .875rem/1.4 inherit; transition:border-color 160ms,box-shadow 160ms,background 160ms;
+}
+#modal .form-group input:hover { border-color:#94A3B8; }
+#modal .form-group input:focus-visible,
+#modal .form-group select:focus-visible,
+#modal .modal-close:focus-visible,
+#modal .btn:focus-visible { outline:3px solid rgba(37,99,235,.22); outline-offset:2px; border-color:#2563EB; }
+#modal .form-group input::placeholder { color:#94A3B8; }
+#modal .form-group small { color:#94A3B8; font-size:.6875rem; line-height:1.4; }
+#modal input[type="file"] { padding:7px 8px; background:#F8FAFC; }
+#modal input[type="file"]::file-selector-button { margin-right:10px; padding:6px 10px; border:0; border-radius:7px; background:#E2E8F0; color:#334155; font:600 .75rem inherit; cursor:pointer; }
+.hazard-picker { display:flex; flex-wrap:wrap; gap:7px; min-height:46px; padding:8px; border:1px solid #CBD5E1; border-radius:10px; background:#F8FAFC; }
+#modal .picker-chip { border-width:1px; }
+#modal .picker-chip.selected { border-color:#2563EB; box-shadow:0 0 0 2px rgba(37,99,235,.14); }
+#modal .modal-updated { margin:0; color:#94A3B8; font-size:.6875rem; }
+#modal .modal-actions {
+  position:sticky; bottom:0; z-index:5; margin:14px -24px 0; padding:14px 24px;
+  background:rgba(255,255,255,.97); border-top:1px solid #E2E8F0;
+}
+#modal .modal-actions .btn { min-height:42px; padding:9px 18px; border-radius:10px; font-weight:700; }
+#modal .btn-secondary { background:#F1F5F9; color:#475569; border:1px solid #E2E8F0; }
+#modal .btn-success { background:#2563EB; color:#FFFFFF; border:1px solid #2563EB; }
+#modal .btn-success:hover { background:#1D4ED8; }
+.chemical-card-owner { margin-top:4px; color:#64748B; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+@media (max-width:720px) {
+  #modal { align-items:flex-end; padding:0; }
+  #modal .inventory-modal { width:100%; max-width:none; max-height:96dvh; border-radius:20px 20px 0 0; }
+  .inventory-modal-header { padding:16px 16px 13px; }
+  #chemicalForm { padding:16px 16px 0; }
+  #modal .form-grid,#modal .form-grid-three,#modal .form-grid-dates { grid-template-columns:1fr; gap:11px; }
+  #modal .modal-actions { margin-inline:-16px; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); }
+  #modal .modal-actions .btn { flex:1; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  #modal .form-group input,#modal .form-group select { transition:none; }
+}
 </style>
 </head>
 <body>
@@ -442,7 +513,9 @@ body { background:#F8FAFC; color:#0F172A; }
       <th onclick="sortBy('location')">ที่จัดเก็บ ↕</th>
       <th>วันรับเข้า</th>
       <th>วันเปิดใช้</th>
+      <th>Best before</th>
       <th>วันหมดอายุ</th>
+      <th onclick="sortBy('teacher_name')">ชื่ออาจารย์ ↕</th>
       <th onclick="sortBy('updated_at')" style="min-width:120px">อัปเดตล่าสุด ↕</th>
       <th style="width:85px">จัดการ</th>
     </tr>
@@ -541,35 +614,62 @@ body { background:#F8FAFC; color:#0F172A; }
 </div>
 
 <div class="modal-overlay" id="modal">
-  <div class="modal">
-    <h2 id="modalTitle">➕ เพิ่มสารเคมีใหม่</h2>
-    <div class="form-grid">
-      <div class="form-group"><label>รหัสภาชนะบรรจุ</label><input type="text" id="f_code" placeholder="เช่น EN14-69-0001"></div>
-      <div class="form-group"><label>CAS no.</label><input type="text" id="f_cas" placeholder="เช่น 7647-14-5"></div>
-      <div class="form-group full"><label>ชื่อสารเคมี *</label><input type="text" id="f_name" placeholder="ชื่อสารเคมี"></div>
-      <div class="form-group">
-        <label>ประเภทความอันตราย <span style="font-weight:400;color:#a0aec0">(พิมพ์หรือเลือก)</span></label>
-        <input type="text" id="f_hazard" list="hazardDatalist" placeholder="เช่น Irritant หรือพิมพ์ใหม่" autocomplete="off">
-        <datalist id="hazardDatalist"></datalist>
+  <div class="modal inventory-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="inventory-modal-header">
+      <div>
+        <span class="modal-eyebrow">CHEMICAL INVENTORY</span>
+        <h2 id="modalTitle">เพิ่มสารเคมีใหม่</h2>
+        <p>กรอกข้อมูลภาชนะ สต็อก และผู้รับผิดชอบ</p>
       </div>
-      <div class="form-group"><label>ที่จัดเก็บ</label><input type="text" id="f_location" placeholder="เช่น C1-3"></div>
-      <div class="form-group"><label>ขนาดขวดบรรจุ</label><input type="text" id="f_size" placeholder="เช่น 500g"></div>
-      <div class="form-group"><label>คงเหลือ</label><input type="text" id="f_remaining" placeholder="เช่น &lt;500g"></div>
-      <div class="form-group"><label>วันที่รับเข้ามา</label><input type="text" id="f_received" placeholder="DD/MM/YYYY"></div>
-      <div class="form-group"><label>วันที่เปิดใช้ขวด</label><input type="text" id="f_opened" placeholder="DD/MM/YYYY"></div>
-      <div class="form-group"><label>วันหมดอายุ</label><input type="text" id="f_expiry" placeholder="DD/MM/YYYY"></div>
-      <div class="form-group full"><label>รูปสารเคมี</label><input type="file" id="f_image_file" accept="image/jpeg,image/png,image/webp"><input type="url" id="f_image_url" placeholder="หรือวางลิงก์รูปเดิม https://..." style="margin-top:6px"><small style="display:block;color:#a0aec0;margin-top:4px">รูปจะอัปโหลดเข้า Supabase Storage คลัง chemical-images อัตโนมัติ</small></div>
-      <div class="form-group full">
-        <label>ความอันตรายเพิ่มเติม <span style="font-weight:400;color:#a0aec0">(ไม่กระทบการจัดกลุ่ม — คลิกเลือกได้หลายอัน)</span></label>
-        <div id="extraHazardPicker" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1.5px solid #cbd5e0;border-radius:8px;min-height:40px;cursor:pointer;background:white"></div>
-        <input type="hidden" id="f_extra_hazards">
+      <button class="modal-close" type="button" onclick="closeModal()" aria-label="ปิดหน้าต่าง">×</button>
+    </div>
+
+    <form id="chemicalForm" onsubmit="event.preventDefault(); saveItem()">
+      <fieldset class="form-section">
+        <legend>ข้อมูลสารเคมี</legend>
+        <div class="form-grid">
+          <div class="form-group"><label for="f_code">รหัสภาชนะบรรจุ</label><input name="code" type="text" id="f_code" placeholder="เช่น EN14-69-0001" autocomplete="off"></div>
+          <div class="form-group"><label for="f_cas">CAS No.</label><input name="cas" type="text" id="f_cas" placeholder="เช่น 7647-14-5" autocomplete="off"></div>
+          <div class="form-group full"><label for="f_name">ชื่อสารเคมี <span class="required-mark">*</span></label><input name="name" type="text" id="f_name" placeholder="ชื่อสารเคมี" required></div>
+          <div class="form-group"><label for="f_hazard">ประเภทความอันตราย <span class="field-hint">พิมพ์หรือเลือก</span></label><input name="hazard" type="text" id="f_hazard" list="hazardDatalist" placeholder="เช่น Corrosion" autocomplete="off"><datalist id="hazardDatalist"></datalist></div>
+          <div class="form-group"><label for="f_teacher_name">ชื่ออาจารย์ / ผู้รับผิดชอบ</label><input name="teacher_name" type="text" id="f_teacher_name" placeholder="เช่น อ.สมชาย ใจดี" autocomplete="name"></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section">
+        <legend>สต็อกและที่จัดเก็บ</legend>
+        <div class="form-grid form-grid-three">
+          <div class="form-group"><label for="f_location">ที่จัดเก็บ</label><input name="location" type="text" id="f_location" placeholder="เช่น B1" autocomplete="off"></div>
+          <div class="form-group"><label for="f_size">ขนาดบรรจุ</label><input name="size" type="text" id="f_size" placeholder="เช่น 500 g"></div>
+          <div class="form-group"><label for="f_remaining">คงเหลือ</label><input name="remaining" type="text" id="f_remaining" placeholder="เช่น 450 g"></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section">
+        <legend>วันที่สำคัญ</legend>
+        <div class="form-grid form-grid-dates">
+          <div class="form-group"><label for="f_received">วันที่รับเข้า</label><input name="received" type="date" id="f_received"></div>
+          <div class="form-group"><label for="f_opened">วันที่เปิดใช้ขวด</label><input name="opened" type="date" id="f_opened"></div>
+          <div class="form-group"><label for="f_best_before">Best before</label><input name="best_before" type="date" id="f_best_before"><small>วันที่ควรใช้ก่อน</small></div>
+          <div class="form-group"><label for="f_expiry">วันหมดอายุ</label><input name="expiry" type="date" id="f_expiry"><small>วันสิ้นอายุของสารเคมี</small></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section">
+        <legend>รูปและความอันตรายเพิ่มเติม</legend>
+        <div class="form-grid">
+          <div class="form-group upload-field"><label for="f_image_file">รูปสารเคมี</label><input name="image_file" type="file" id="f_image_file" accept="image/jpeg,image/png,image/webp"><small>JPG, PNG หรือ WebP ขนาดไม่เกิน 5 MB</small></div>
+          <div class="form-group"><label for="f_image_url">ลิงก์รูปเดิม</label><input name="image_url" type="url" id="f_image_url" placeholder="https://..."></div>
+          <div class="form-group full"><label>ความอันตรายเพิ่มเติม <span class="field-hint">เลือกได้หลายรายการ</span></label><div id="extraHazardPicker" class="hazard-picker"></div><input type="hidden" id="f_extra_hazards"></div>
+        </div>
+      </fieldset>
+
+      <div class="modal-updated" id="modalUpdatedInfo"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" type="button" onclick="closeModal()">ยกเลิก</button>
+        <button class="btn btn-success" type="submit">บันทึกข้อมูล</button>
       </div>
-    </div>
-    <div class="modal-updated" id="modalUpdatedInfo"></div>
-    <div class="modal-actions">
-      <button class="btn" style="background:#e2e8f0;color:#4a5568" onclick="closeModal()">ยกเลิก</button>
-      <button class="btn btn-success" onclick="saveItem()">💾 บันทึก</button>
-    </div>
+    </form>
   </div>
 </div>
 
@@ -801,6 +901,8 @@ function toDbRow(item) {
     received: item.received || '',
     opened: item.opened || '',
     expiry: item.expiry || '',
+    best_before: item.best_before || '',
+    teacher_name: item.teacher_name || '',
     image_url: item.image_url || '',
     updated_at: item.updated_at || null,
   };
@@ -823,6 +925,8 @@ function fromDbRow(row) {
     received: row.received || '',
     opened: row.opened || '',
     expiry: row.expiry || '',
+    best_before: row.best_before || '',
+    teacher_name: row.teacher_name || '',
     image_url: row.image_url || '',
     updated_at: row.updated_at || null,
   };
@@ -867,15 +971,26 @@ async function upsertRemoteItem(item) {
     }
   }
   if (error) {
-    // Older Supabase tables may not have image_url yet; keep normal inventory saves working.
-    if (Object.prototype.hasOwnProperty.call(row, 'image_url')) {
-      const fallback = {...row}; delete fallback.image_url;
-      const retry = item._sid
-        ? await inventoryClient.from(SUPABASE_TABLE).update(fallback).eq('app_id', item._sid)
-        : await inventoryClient.from(SUPABASE_TABLE).insert([fallback]).select('app_id').single();
-      if (!retry.error) {
-        if (!item._sid && retry.data) { item._sid = retry.data.app_id; item._id = retry.data.app_id; }
-        return true;
+    // Keep basic saves working until optional columns have been migrated.
+    if (/image_url|best_before|teacher_name/i.test(error.message || '')) {
+      const fallback = {...row};
+      const omitted = [];
+      let retryError = error;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const field = ['image_url','best_before','teacher_name']
+          .find(candidate => Object.prototype.hasOwnProperty.call(fallback, candidate) && new RegExp(candidate, 'i').test(retryError?.message || ''));
+        if (!field) break;
+        delete fallback[field];
+        omitted.push(field);
+        const retry = item._sid
+          ? await inventoryClient.from(SUPABASE_TABLE).update(fallback).eq('app_id', item._sid)
+          : await inventoryClient.from(SUPABASE_TABLE).insert([fallback]).select('app_id').single();
+        retryError = retry.error;
+        if (!retryError) {
+          if (!item._sid && retry.data) { item._sid = retry.data.app_id; item._id = retry.data.app_id; }
+          alert(`บันทึกข้อมูลหลักแล้ว แต่ช่อง ${omitted.join(', ')} จะยังไม่ถูกเก็บจนกว่าจะอัปเดตโครงสร้าง Supabase`);
+          return true;
+        }
       }
     }
     console.error(error);
@@ -901,6 +1016,14 @@ async function replaceAllRemoteData(items) {
   if (!supabase) return true;
   isSyncing = true;
   try {
+    // Validate the new schema before deleting anything during a full import.
+    const { error: schemaError } = await inventoryClient
+      .from(SUPABASE_TABLE)
+      .select('best_before,teacher_name')
+      .limit(0);
+    if (schemaError) {
+      throw new Error('ฐานข้อมูลยังไม่มีช่อง Best before และชื่ออาจารย์ กรุณารันไฟล์ supabase/add-best-before-and-teacher.sql ก่อน Import');
+    }
     // Delete all rows — app_id is Supabase primary key, always > 0
     const { error: delError } = await inventoryClient.from(SUPABASE_TABLE).delete().gt('app_id', 0);
     if (delError) throw delError;
@@ -1319,7 +1442,7 @@ function chemicalVisual(d) {
       ? `<img src="${escapeHtml(d.image_url)}" alt="ภาพ ${escapeHtml(d.name)}" loading="lazy" onerror="this.replaceWith(document.createTextNode('◇'))">`
       : `<div class="chemical-image-placeholder" aria-label="ยังไม่มีรูปสาร">ยังไม่มีรูปสาร</div>`}
     <span class="chemical-card-hazard hazard-label" style="${getBadgeStyle(d.hazard)}">${hazardIconHtml(d.hazard, 'ghs-icon ghs-icon-sm')}<span>${escapeHtml(d.hazard || 'ไม่ระบุ')}</span></span>
-  </div><div class="chemical-side-main"><div class="chemical-card-title" title="${escapeHtml(d.name)}">${escapeHtml(d.name || 'ไม่ระบุชื่อ')}</div><div class="chemical-card-meta">CAS ${escapeHtml(d.cas || '—')} · ${escapeHtml(d.code || 'ไม่มีรหัส')}</div></div></div>`;
+  </div><div class="chemical-side-main"><div class="chemical-card-title" title="${escapeHtml(d.name)}">${escapeHtml(d.name || 'ไม่ระบุชื่อ')}</div><div class="chemical-card-meta">CAS ${escapeHtml(d.cas || '—')} · ${escapeHtml(d.code || 'ไม่มีรหัส')}</div>${d.teacher_name ? `<div class="chemical-card-owner" title="${escapeHtml(d.teacher_name)}">ผู้รับผิดชอบ: ${escapeHtml(d.teacher_name)}</div>` : ''}</div></div>`;
 }
 
 function renderCardsLegacy() {
@@ -1338,6 +1461,7 @@ function renderCardsLegacy() {
         <div class="chemical-stat"><div class="chemical-stat-label">คงเหลือ</div><div class="chemical-stat-value">${escapeHtml(d.remaining || '—')}</div></div>
         <div class="chemical-stat"><div class="chemical-stat-label">ที่จัดเก็บ</div><div class="chemical-stat-value">📍 ${escapeHtml(d.location || '—')}</div></div>
         <div class="chemical-stat"><div class="chemical-stat-label">ขนาดขวด</div><div class="chemical-stat-value">${escapeHtml(d.size || '—')}</div></div>
+        <div class="chemical-stat"><div class="chemical-stat-label">Best before</div><div class="chemical-stat-value">${escapeHtml(d.best_before || '—')}</div></div>
         <div class="chemical-stat"><div class="chemical-stat-label">หมดอายุ</div><div class="chemical-stat-value">${escapeHtml(d.expiry || '—')}</div></div>
       </div>
       <div class="chemical-card-footer"><span class="chemical-card-meta">${d.updated_at ? 'อัปเดต ' + escapeHtml(fmtDateTime(d.updated_at)) : 'ยังไม่มีการอัปเดต'}</span><div class="chemical-card-actions"><button class="btn-sm btn-withdraw" onclick="openWithdrawModal(${d._id})" aria-label="เบิก ${escapeHtml(d.name)}">เบิก</button><button class="btn-sm btn-edit" onclick="openEditModal(${d._id})" aria-label="แก้ไข ${escapeHtml(d.name)}">✏️</button><button class="btn-sm btn-del" onclick="deleteItem(${d._id})" aria-label="ลบ ${escapeHtml(d.name)}">🗑</button></div></div>
@@ -1356,6 +1480,7 @@ function renderCards() {
         <div class="chemical-stat"><div class="chemical-stat-label">คงเหลือ</div><div class="chemical-stat-value">${escapeHtml(d.remaining || '—')}</div></div>
         <div class="chemical-stat"><div class="chemical-stat-label">ที่จัดเก็บ</div><div class="chemical-stat-value">${escapeHtml(d.location || '—')}</div></div>
         <div class="chemical-stat"><div class="chemical-stat-label">ขนาดขวด</div><div class="chemical-stat-value">${escapeHtml(d.size || '—')}</div></div>
+        <div class="chemical-stat"><div class="chemical-stat-label">Best before</div><div class="chemical-stat-value">${escapeHtml(d.best_before || '—')}</div></div>
         <div class="chemical-stat"><div class="chemical-stat-label">หมดอายุ</div><div class="chemical-stat-value">${escapeHtml(d.expiry || '—')}</div></div>
       </div>
       <div class="chemical-card-footer">
@@ -1509,7 +1634,9 @@ function renderTable() {
         <td>${escapeHtml(d.location)}</td>
         <td style="font-size:11px">${escapeHtml(d.received)}</td>
         <td style="font-size:11px">${escapeHtml(d.opened)}</td>
+        <td style="font-size:11px">${escapeHtml(d.best_before)}</td>
         <td style="font-size:11px">${escapeHtml(d.expiry)}</td>
+        <td style="font-size:11px">${escapeHtml(d.teacher_name || '—')}</td>
         <td>${updCell}</td>
         <td style="white-space:nowrap">
           <button class="btn-sm btn-withdraw" onclick="openWithdrawModal(${d._id})">เบิก</button>
@@ -1532,7 +1659,7 @@ function applyFilters() {
   const q = document.getElementById('searchBox').value.toLowerCase();
   const loc = document.getElementById('locationFilter').value;
   filtered = data.filter(d => {
-    const mQ = !q || [d.code,d.name,d.cas,d.location,d.hazard].some(v=>(v||'').toLowerCase().includes(q));
+    const mQ = !q || [d.code,d.name,d.cas,d.location,d.hazard,d.teacher_name].some(v=>(v||'').toLowerCase().includes(q));
     const mH = !activeHazard || d.hazard === activeHazard;
     const mL = !loc || d.location === loc;
     return mQ && mH && mL;
@@ -1569,19 +1696,19 @@ function dateToStorageValue(value) {
 }
 
 function upgradeDateInputs() {
-  ['received','opened','expiry'].forEach(key => {
+  ['received','opened','best_before','expiry'].forEach(key => {
     const input = document.getElementById(`f_${key}`);
     if (!input) return;
     input.type = 'date';
     input.removeAttribute('placeholder');
-    input.setAttribute('aria-label', key === 'received' ? 'วันที่รับเข้า' : key === 'opened' ? 'วันที่เปิดใช้ขวด' : 'วันหมดอายุ');
+    input.setAttribute('aria-label', key === 'received' ? 'วันที่รับเข้า' : key === 'opened' ? 'วันที่เปิดใช้ขวด' : key === 'best_before' ? 'Best before' : 'วันหมดอายุ');
   });
 }
 
 function openAddModal() {
   editingId = null;
-  document.getElementById('modalTitle').textContent = '➕ เพิ่มสารเคมีใหม่';
-  ['code','name','cas','hazard','size','remaining','location','received','opened','expiry'].forEach(f => {
+  document.getElementById('modalTitle').textContent = 'เพิ่มสารเคมีใหม่';
+  ['code','name','cas','hazard','teacher_name','size','remaining','location','received','opened','best_before','expiry'].forEach(f => {
     document.getElementById('f_'+f).value = '';
   });
   document.getElementById('f_image_url').value = '';
@@ -1597,7 +1724,7 @@ function openAddModal() {
 function openEditModal(id) {
   editingId = id;
   const d = data.find(x => x._id === id);
-  document.getElementById('modalTitle').textContent = '✏️ แก้ไขข้อมูลสาร';
+  document.getElementById('modalTitle').textContent = 'แก้ไขข้อมูลสารเคมี';
   document.getElementById('f_code').value = d.code||'';
   document.getElementById('f_name').value = d.name||'';
   document.getElementById('f_cas').value = d.cas||'';
@@ -1607,7 +1734,9 @@ function openEditModal(id) {
   document.getElementById('f_location').value = d.location||'';
   document.getElementById('f_received').value = dateToInputValue(d.received);
   document.getElementById('f_opened').value = dateToInputValue(d.opened);
+  document.getElementById('f_best_before').value = dateToInputValue(d.best_before);
   document.getElementById('f_expiry').value = dateToInputValue(d.expiry);
+  document.getElementById('f_teacher_name').value = d.teacher_name||'';
   document.getElementById('f_image_url').value = d.image_url||'';
   document.getElementById('f_image_file').value = '';
   const extras = (d.extra_hazards||'').split(',').filter(Boolean);
@@ -1648,7 +1777,9 @@ async function saveItem() {
     location: document.getElementById('f_location').value.trim(),
     received: dateToStorageValue(document.getElementById('f_received').value),
     opened: dateToStorageValue(document.getElementById('f_opened').value),
+    best_before: dateToStorageValue(document.getElementById('f_best_before').value),
     expiry: dateToStorageValue(document.getElementById('f_expiry').value),
+    teacher_name: document.getElementById('f_teacher_name').value.trim(),
     image_url: imageUrl,
     updated_at: now,
   };
@@ -1686,8 +1817,8 @@ async function deleteItem(id) {
 }
 
 function exportCSV() {
-  const keys = ['code','name','cas','hazard','size','remaining','location','received','opened','expiry','updated_at'];
-  const headers = ['รหัสภาชนะบรรจุ','ชื่อสารเคมี','CAS no.','ประเภทความอันตราย','ขนาดขวดบรรจุ','คงเหลือ','ที่จัดเก็บ','วันที่รับเข้ามา','วันที่เปิดใช้ขวด','วันหมดอายุ','อัปเดตล่าสุด'];
+  const keys = ['code','name','cas','hazard','size','remaining','location','received','opened','best_before','expiry','teacher_name','updated_at'];
+  const headers = ['รหัสภาชนะบรรจุ','ชื่อสารเคมี','CAS no.','ประเภทความอันตราย','ขนาดขวดบรรจุ','คงเหลือ','ที่จัดเก็บ','วันที่รับเข้ามา','วันที่เปิดใช้ขวด','best before','วันหมดอายุ','ชื่ออาจารย์','อัปเดตล่าสุด'];
   const rows = [headers, ...filtered.map(d => keys.map(k => {
     if (k === 'updated_at') return fmtDateTime(d[k]) || '';
     return d[k] || '';
@@ -1755,32 +1886,65 @@ function fmtExcelDate(val) {
   return s.startsWith('=') ? '' : s;
 }
 
+function normalizeExcelHeader(value) {
+  return cleanCell(value).toLowerCase().replace(/[\s._()\-\/]+/g, '');
+}
+
+const IMPORT_HEADER_ALIASES = {
+  code: ['รหัสภาชนะบรรจุ','รหัสภาชนะบรรจ','รหัส','code','chemicalcode'],
+  name: ['ชื่อสารเคมี','ชื่อสาร','chemicalname','name'],
+  cas: ['casno','casnumber','cas'],
+  hazard: ['ประเภทความอันตราย','ghs','hazard','hazardtype'],
+  size: ['ขนาดขวดบรรจุ','ขนาดบรรจุ','ขนาด','size','containersize'],
+  remaining: ['คงเหลือ','remaining','balance','stock'],
+  location: ['ที่จัดเก็บedit','ที่จัดเก็บ','location','storage'],
+  received: ['วันที่รับเข้ามา','วันที่รับเข้า','received','receiveddate'],
+  opened: ['วันที่เปิดใช้ขวด','วันที่เปิดใช้','opened','openeddate'],
+  best_before: ['bestbefore','ควรใช้ก่อน','bestbeforedate'],
+  expiry: ['วันหมดอายุ','expiry','expirydate'],
+  teacher_name: ['ชื่ออาจารย์','อาจารย์','ผู้รับผิดชอบ','teacher','teachername','owner'],
+};
+
+function findImportColumns(headerRow) {
+  const normalized = headerRow.map(normalizeExcelHeader);
+  return Object.fromEntries(Object.entries(IMPORT_HEADER_ALIASES).map(([field, aliases]) => [
+    field,
+    normalized.findIndex(value => aliases.map(normalizeExcelHeader).includes(value)),
+  ]));
+}
+
 function parseExcelData(wb) {
   const rows = [];
   wb.SheetNames.forEach(sheetName => {
     const key = sheetName.toLowerCase();
-    if (!HAZARD_SHEETS.includes(key)) return;
+    if (key === 'summary') return;
     const isNoDanger = key === 'no danger';
     const ws = wb.Sheets[sheetName];
     const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-    // skip header row (row 0)
-    for (let i = 1; i < raw.length; i++) {
+    const headerIndex = raw.slice(0, 10).findIndex(candidate => {
+      const columns = findImportColumns(candidate);
+      return columns.code >= 0 && columns.name >= 0;
+    });
+    if (headerIndex < 0) return;
+    const columns = findImportColumns(raw[headerIndex]);
+    for (let i = headerIndex + 1; i < raw.length; i++) {
       const r = raw[i];
-      const nameIdx = isNoDanger ? 4 : 3;
-      const codeIdx = isNoDanger ? 3 : 2;
-      const name = cleanCell(r[nameIdx]);
+      const value = field => columns[field] >= 0 ? r[columns[field]] : '';
+      const name = cleanCell(value('name'));
       if (!name || name.startsWith('=')) continue;
       rows.push({
-        code:      cleanCell(r[codeIdx]),
+        code:      cleanCell(value('code')),
         name,
-        cas:       cleanCell(r[nameIdx+1]),
-        hazard:    normalizeHazard(r[nameIdx+2], isNoDanger),
-        size:      cleanCell(r[nameIdx+3]),
-        remaining: cleanCell(r[nameIdx+4]),
-        location:  cleanCell(r[nameIdx+5]),
-        received:  fmtExcelDate(r[nameIdx+6]),
-        opened:    fmtExcelDate(r[nameIdx+7]),
-        expiry:    fmtExcelDate(r[nameIdx+8]),
+        cas:       cleanCell(value('cas')),
+        hazard:    normalizeHazard(value('hazard'), isNoDanger),
+        size:      cleanCell(value('size')),
+        remaining: cleanCell(value('remaining')),
+        location:  cleanCell(value('location')),
+        received:  fmtExcelDate(value('received')),
+        opened:    fmtExcelDate(value('opened')),
+        best_before: fmtExcelDate(value('best_before')),
+        expiry:    fmtExcelDate(value('expiry')),
+        teacher_name: cleanCell(value('teacher_name')),
         extra_hazards: '',
         updated_at: null,
       });
@@ -1791,7 +1955,7 @@ function parseExcelData(wb) {
 
 function processImport(file) {
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     try {
       const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:false});
       const imported = parseExcelData(wb);
@@ -1804,12 +1968,12 @@ function processImport(file) {
       if (!choice) return;
 
       const baseTs = Date.now();
-      data = imported.map((d,i) => ({...d, _id: baseTs + i}));
+      const nextData = imported.map((d,i) => ({...d, _id: baseTs + i}));
+      if (!(await replaceAllRemoteData(nextData))) return;
+      data = nextData;
       activeHazard = '';
       refreshDerivedData();
       applyFilters();
-      replaceAllRemoteData(data);
-
       // Flash success
       const bar = document.querySelector('.topbar');
       const orig = bar.style.background;
