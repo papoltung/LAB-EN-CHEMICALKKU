@@ -544,7 +544,7 @@ body { background:#F8FAFC; color:#0F172A; }
   <div class="modal">
     <h2 id="modalTitle">➕ เพิ่มสารเคมีใหม่</h2>
     <div class="form-grid">
-      <div class="form-group"><label>รหัสภาชนะบรรจุ</label><input type="text" id="f_code" placeholder="เช่น EN14AC64000999"></div>
+      <div class="form-group"><label>รหัสภาชนะบรรจุ</label><input type="text" id="f_code" placeholder="เช่น EN14-69-0001"></div>
       <div class="form-group"><label>CAS no.</label><input type="text" id="f_cas" placeholder="เช่น 7647-14-5"></div>
       <div class="form-group full"><label>ชื่อสารเคมี *</label><input type="text" id="f_name" placeholder="ชื่อสารเคมี"></div>
       <div class="form-group">
@@ -576,6 +576,7 @@ body { background:#F8FAFC; color:#0F172A; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { nextChemicalCode } from "./chemical-code.mjs";
 
 const SUPABASE_URL = "https://cxoqxjgzpzlrlpxjlhpt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_lWz8MJ0tVkL7H49Kn5veYQ__PTQZOPM";
@@ -1551,16 +1552,7 @@ function sortBy(key) {
 }
 
 function genNextCode() {
-  const yy = String(new Date().getFullYear() + 543).slice(-2); // พ.ศ. 2 หลัก
-  const prefix = 'EN14AC' + yy;
-  // หาเลขลำดับสูงสุดของปีนี้
-  const nums = data
-    .map(d => d.code || '')
-    .filter(c => c.startsWith(prefix))
-    .map(c => parseInt(c.slice(prefix.length), 10))
-    .filter(n => !isNaN(n));
-  const next = nums.length > 0 ? Math.max(...nums) + 1 : 1;
-  return prefix + String(next).padStart(6, '0');
+  return nextChemicalCode(data.map(d => d.code || ''));
 }
 
 function dateToInputValue(value) {
