@@ -677,6 +677,7 @@ body { background:#F8FAFC; color:#0F172A; }
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 import { nextChemicalCode } from "./chemical-code.mjs";
+import { mergeLocationOptions } from "./location-options.mjs";
 
 const SUPABASE_URL = "https://cxoqxjgzpzlrlpxjlhpt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_lWz8MJ0tVkL7H49Kn5veYQ__PTQZOPM";
@@ -876,7 +877,8 @@ function ensureHazardTypesFromData() {
 }
 
 function recalcLocations() {
-  locations = [...new Set(data.map(d => d.location).filter(l => l && l !== 'Unknown' && l !== 'None' && l !== ''))].sort();
+  locations = mergeLocationOptions(locations, data);
+  saveLocationOptions();
 }
 
 function refreshDerivedData() {
@@ -1019,10 +1021,10 @@ async function replaceAllRemoteData(items) {
     // Validate the new schema before deleting anything during a full import.
     const { error: schemaError } = await inventoryClient
       .from(SUPABASE_TABLE)
-      .select('best_before,teacher_name')
+      .select('image_url,best_before,teacher_name')
       .limit(0);
     if (schemaError) {
-      throw new Error('ฐานข้อมูลยังไม่มีช่อง Best before และชื่ออาจารย์ กรุณารันไฟล์ supabase/add-best-before-and-teacher.sql ก่อน Import');
+      throw new Error('ฐานข้อมูลยังขาด image_url, Best before หรือชื่ออาจารย์ กรุณารันไฟล์ SQL migration ก่อน Import');
     }
     // Delete all rows — app_id is Supabase primary key, always > 0
     const { error: delError } = await inventoryClient.from(SUPABASE_TABLE).delete().gt('app_id', 0);
@@ -1267,8 +1269,27 @@ document.getElementById('f_hazard').addEventListener('change', () => {
   buildExtraPicker(cur);
 });
 
-// Location management
-let locations = [];
+// Location management is independent from inventory rows, so deleting inventory
+// does not remove the dropdown choices.
+const LOCATION_STORAGE_KEY = 'lab_inventory_locations_v1';
+const DEFAULT_LOCATIONS = ['B1', 'C1'];
+
+function loadLocationOptions() {
+  try {
+    const raw = localStorage.getItem(LOCATION_STORAGE_KEY);
+    if (raw === null) return [...DEFAULT_LOCATIONS];
+    const saved = JSON.parse(raw);
+    return mergeLocationOptions(Array.isArray(saved) ? saved : [], []);
+  } catch {
+    return [...DEFAULT_LOCATIONS];
+  }
+}
+
+function saveLocationOptions() {
+  try { localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(locations)); } catch {}
+}
+
+let locations = loadLocationOptions();
 
 function rebuildLocDropdown() {
   const sel = document.getElementById('locationFilter');
@@ -1340,6 +1361,7 @@ function addLocation() {
   if (locations.includes(val)) { alert('มีที่จัดเก็บนี้อยู่แล้ว'); return; }
   locations.push(val);
   locations.sort();
+  saveLocationOptions();
   rebuildLocDropdown();
   renderLocList();
   document.getElementById('newLocInput').value = '';
@@ -1354,6 +1376,7 @@ async function renameLocation(old) {
   // Update all chemicals using this location
   data.forEach(d => { if (d.location === old) d.location = n; });
   locations = locations.map(l => l === old ? n : l).sort();
+  saveLocationOptions();
   rebuildLocDropdown();
   renderLocList();
   applyFilters();
@@ -1368,6 +1391,7 @@ async function deleteLocation(loc) {
   if (!confirm(msg)) return;
   if (count > 0) data.forEach(d => { if (d.location === loc) d.location = ''; });
   locations = locations.filter(l => l !== loc);
+  saveLocationOptions();
   rebuildLocDropdown();
   renderLocList();
   applyFilters();
