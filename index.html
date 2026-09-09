@@ -1453,9 +1453,11 @@ async function uploadChemicalImage(file, itemCode) {
   const ext = file.type.split('/')[1].replace('jpeg', 'jpg');
   const safeCode = (itemCode || 'chemical').replace(/[^a-zA-Z0-9_-]/g, '_');
   const path = `${safeCode}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await inventoryClient.storage.from(SUPABASE_IMAGE_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+  // Storage policies allow authenticated users, so upload with the client that
+  // owns the current auth session. inventoryClient is intentionally anonymous.
+  const { error } = await supabase.storage.from(SUPABASE_IMAGE_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
   if (error) { alert('อัปโหลดรูปไม่สำเร็จ: ' + error.message); return null; }
-  return inventoryClient.storage.from(SUPABASE_IMAGE_BUCKET).getPublicUrl(path).data.publicUrl;
+  return supabase.storage.from(SUPABASE_IMAGE_BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
 function chemicalVisual(d) {
